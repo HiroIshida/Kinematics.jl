@@ -1,7 +1,25 @@
 using Rotations: rotation_between, Rotation, RotMatrix, UnitQuaternion, RotXYZ
 using StaticArrays
-
 const SVector3f = SVector{3, Float64}
+
+mutable struct Link_
+    name::String
+    id::Int
+    pjoint_id::Int
+    cjoint_ids::Vector{Int}
+    plink_id::Int
+    clink_ids::Vector{Int}
+end
+
+struct Link
+    name::String
+    id::Int
+    pjoint_id::Int
+    cjoint_ids::Vector{Int}
+    plink_id::Int
+    clink_ids::Vector{Int}
+end
+Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids)
 
 mutable struct Transform
     positoin::SVector3f
@@ -48,8 +66,3 @@ function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:Joi
     pose = Transform(pos, rotmat)
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
-
-"""
-rev = Revolute([0, 0, 0])
-jt = Joint("hoge", 0, 0, 0, [1, 2, 3], [1, 2, 3], rev)
-"""
