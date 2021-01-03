@@ -52,6 +52,10 @@ for urdf_joint in urdf_model.joints
             lower_limit = urdf_joint.limit.lower
             upper_limit = urdf_joint.limit.upper
             return Revolute(urdf_joint.axis, lower_limit, upper_limit)
+        elseif joint_type_name=="prismatic"
+            lower_limit = urdf_joint.limit.lower
+            upper_limit = urdf_joint.limit.upper
+            return Prismatic(urdf_joint.axis, lower_limit, upper_limit)
         else
             return Fixed()
         end

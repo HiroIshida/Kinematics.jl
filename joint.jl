@@ -15,15 +15,17 @@ end
 
 
 abstract type JointType end
-struct Revolute<:JointType
-    axis::SVector3f
-    lower_limit::Float64
-    upper_limit::Float64
+for MovableJointType in (:Revolute, :Prismatic)
+    @eval begin
+        struct $MovableJointType<:JointType
+            axis::SVector3f
+            lower_limit::Float64
+            upper_limit::Float64
+        end
+        $MovableJointType(axis, lower_limit, upper_limit) = ($MovableJointType(SVector3f(axis), lower_limit, upper_limit))
+        $MovableJointType(axis) = (Revolute(SVector3f(axis), -Inf, Inf))
+    end
 end
-Revolute(axis, lower_limit, upper_limit) = (Revolute(SVector3f(axis), lower_limit, upper_limit))
-Revolute(axis) = (Revolute(SVector3f(axis), -Inf, Inf))
-
-
 struct Fixed<:JointType end
 
 struct Joint{JT<:JointType}
