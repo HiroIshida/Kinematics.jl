@@ -1,10 +1,5 @@
-using PyCall
-@pyimport(skrobot)
-
-include("mechanism.jl")
-
 function parse_urdf(urdf_path)
-    urdf_model = skrobot.utils.URDF.load(urdf_path)
+    urdf_model = __skrobot__.utils.URDF.load(urdf_path)
     joint_map = Dict()
     for i in 1:length(urdf_model.joints)
         joint = urdf_model.joints[i]
@@ -62,5 +57,7 @@ function parse_urdf(urdf_path)
     mech = Mechanism(links, joints)
 end
 
+"""
 robot_model = skrobot.models.PR2()
 mech = parse_urdf(robot_model.urdf_path)
+"""

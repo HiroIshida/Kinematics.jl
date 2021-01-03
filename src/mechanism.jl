@@ -1,7 +1,3 @@
-using Rotations: rotation_between, Rotation, RotMatrix, UnitQuaternion, RotXYZ
-using StaticArrays
-const SVector3f = SVector{3, Float64}
-
 mutable struct Link_
     name::String
     id::Int
