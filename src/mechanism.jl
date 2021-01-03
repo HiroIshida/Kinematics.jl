@@ -75,9 +75,9 @@ child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
 parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
 child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
 parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
-child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_idS]
+child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
 
 find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
 find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
-
-
+isroot(link::Link) = (link.plink_id==-1)
+isleaf(link::Link) = (isempty(link.clink_ids))

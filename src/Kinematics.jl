@@ -11,7 +11,7 @@ const SVector3f = SVector{3, Float64}
 include("mechanism.jl")
 include("load_urdf.jl")
 
-export Mechanism, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint
+export Mechanism, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf
 export parse_urdf
 
 
