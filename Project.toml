@@ -1,5 +1,8 @@
 name = "Kinematics"
+uuid = "83541c07-b897-432c-933e-6a94c57fcfe3"
+
 [deps]
 PyCall = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
 Rotations = "6038ab10-8711-5258-84ad-4b1120ba62dc"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
