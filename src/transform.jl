@@ -41,4 +41,14 @@ function (*)(tf::Transform, vec::SVector3f)
     return tf.rotation * vec + tf.translation
 end
 
+function (*)(rot12::UnitQuaternion, tf23::Transform)
+    rot13 = rot12 * tf23.rotation
+    tran13 = rot12 * tf23.translation
+    return Transform(tran13, rot13)
+end
+
+function (*)(trans12::SVector3f, tf23::Transform)
+    return Transform(trans12 + tf23.translation, tf23.rotation)
+end
+
 

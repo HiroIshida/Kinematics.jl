@@ -52,6 +52,21 @@ function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:Joi
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
 
+@inline function joint_transform(joint::Joint{Fixed}, plink_to_hjoint::Transform, angle)
+    return plink_to_hjoint # is plink_to_hlink
+end
+
+function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
+    angle==0.0 && return plink_to_hjoint # no transform
+    q = UnitQuaternion(cos(0.5*angle), (joint.axis * sin(0.5*angle)...))
+    return q * plink_to_hjoint
+end
+
+function joint_transform(joint::Joint{Prismatic}, plink_to_hjoint::Transform, angle)
+    angle==0.0 && return plink_to_hjoint # no transform
+    return SVector3f(joint.axis * angle) * plink_to_hjoint
+end
+
 mutable struct Mechanism
     links::Vector{Link}
     joints::Vector{Joint}
