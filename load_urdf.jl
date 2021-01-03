@@ -59,7 +59,8 @@ function parse_urdf(urdf_path)
     end
 
     links = map(Link, links_tmp)
+    mech = Mechanism(links, joints)
 end
 
 robot_model = skrobot.models.PR2()
-parse_urdf(robot_model.urdf_path)
+mech = parse_urdf(robot_model.urdf_path)

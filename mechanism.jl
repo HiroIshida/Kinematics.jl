@@ -66,3 +66,8 @@ function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:Joi
     pose = Transform(pos, rotmat)
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
+
+mutable struct Mechanism
+    links::Vector{Link}
+    joints::Vector{Joint}
+end
