@@ -1,5 +1,17 @@
 using Kinematics
 using Test 
+Kinematics.debugging() = true
+
+# testing cache:
+cache = CacheVector(3, 1.0)
+@assert typeof(cache) == CacheVector{Float64}
+set_cache!(cache, 2, 2.0)
+@test get_cache(cache, 2)==2.0
+@test_throws AssertionError get_cache(cache, 1)
+@test_throws AssertionError set_cache!(cache, 2, 2.0)
+invalidate!(cache)
+@test_throws AssertionError get_cache(cache, 2)
+
 
 urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
 mech = parse_urdf(urdf_path)
@@ -28,3 +40,4 @@ for name in leaf_link_names
     @test isleaf(link)
     @test isempty(link.cjoint_ids)
 end
+

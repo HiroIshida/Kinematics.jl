@@ -21,6 +21,13 @@ mutable struct Transform
     positoin::SVector3f
     rotation::UnitQuaternion
 end
+function Transform(pos::SVector3f, rot::SVector4f)
+    Transform(pos, UnitQuaternion(rot...))
+end
+
+function Transform() # returns identity transform
+    Transform(SVector3f([0, 0, 0]), SVector4f([0., 0., 0., 1.]))
+end
 
 function Transform(position::SVector3f, rotmat::AbstractMatrix)
     rotation = UnitQuaternion(rotmat)
@@ -69,6 +76,8 @@ mutable struct Mechanism
     linkid_map::Dict{String, Int}
     jointid_map::Dict{String, Int}
 end
+
+
 parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
 child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
 
