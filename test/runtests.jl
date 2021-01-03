@@ -7,6 +7,8 @@ cache = CacheVector(3, 1.0)
 @assert typeof(cache) == CacheVector{Float64}
 set_cache!(cache, 2, 2.0)
 @test get_cache(cache, 2)==2.0
+@test !iscached(cache, 1)
+@test iscached(cache, 2)
 @test_throws AssertionError get_cache(cache, 1)
 @test_throws AssertionError set_cache!(cache, 2, 2.0)
 invalidate!(cache)

@@ -22,7 +22,7 @@ end
 end
 
 @inline function iscached(cv::CacheVector, idx)
-    return iscached_vec[idx]
+    return cv.iscached_vec[idx]
 end
 
 @inline function get_cache(cv::CacheVector, idx)
