@@ -52,23 +52,54 @@ function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:Joi
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
 
+@inline function joint_transform(joint::Joint{Fixed}, plink_to_hjoint::Transform, angle)
+    return plink_to_hjoint # is plink_to_hlink
+end
+
+function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
+    angle==0.0 && return plink_to_hjoint # no transform
+    q = UnitQuaternion(cos(0.5*angle), (joint.jt.axis * sin(0.5*angle)...))
+    hjoint_to_hlink = Transform(zero(SVector{3, Float64}), q)
+    return plink_to_hjoint * hjoint_to_hlink
+end
+
+function joint_transform(joint::Joint{Prismatic}, plink_to_hjoint::Transform, angle)
+    angle==0.0 && return plink_to_hjoint # no transform
+    return plink_to_hjoint * Transform(SVector3f(joint.jt.axis * angle), zero(UnitQuaternion))
+end
+
 mutable struct Mechanism
     links::Vector{Link}
     joints::Vector{Joint}
     linkid_map::Dict{String, Int}
     jointid_map::Dict{String, Int}
+    tf_cache::CacheVector{Transform}
+    angles::Vector{Float64}
+end
+function Mechanism(links, joints, linkid_map, jointid_map)
+    tf_cache = CacheVector(length(links), zero(Transform))
+    angles = zeros(length(joints))
+    Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles)
 end
 
+@inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
+@inline child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
 
-parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
-child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
+@inline parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
+@inline child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
+@inline parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
+@inline child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
 
-parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
-child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
-parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
-child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
+@inline find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
+@inline find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
+@inline isroot(link::Link) = (link.plink_id==-1)
+@inline isleaf(link::Link) = (isempty(link.clink_ids))
 
-find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
-find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
-isroot(link::Link) = (link.plink_id==-1)
-isleaf(link::Link) = (isempty(link.clink_ids))
+@inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]
+@inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (m.angles[joint.id] = angle)
+
+# forwarding cache methods
+@inline invalidate!(m::Mechanism) = invalidate!(m.tf_cache)
+@inline set_cache!(m::Mechanism, link::Link, angle) = set_cache!(m.tf_cache, link.id, angle)
+@inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)
+@inline iscached(m::Mechanism, link::Link) = iscached(m.tf_cache, link.id)
