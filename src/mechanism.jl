@@ -58,13 +58,14 @@ end
 
 function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
     angle==0.0 && return plink_to_hjoint # no transform
-    q = UnitQuaternion(cos(0.5*angle), (joint.axis * sin(0.5*angle)...))
-    return q * plink_to_hjoint
+    q = UnitQuaternion(-0.5*sin(0.5*angle), (0.5*joint.jt.axis * cos(0.5*angle)...))
+    hjoint_to_hlink = Transform(zero(SVector{3, Float64}), q)
+    return plink_to_hjoint * hjoint_to_hlink
 end
 
 function joint_transform(joint::Joint{Prismatic}, plink_to_hjoint::Transform, angle)
     angle==0.0 && return plink_to_hjoint # no transform
-    return SVector3f(joint.axis * angle) * plink_to_hjoint
+    return plink_to_hjoint * Transform(SVector3f(joint.jt.axis * angle), zero(UnitQuaternion))
 end
 
 mutable struct Mechanism
