@@ -31,12 +31,16 @@ function parse_urdf(urdf_path)
                 lower_limit = urdf_joint.limit.lower
                 upper_limit = urdf_joint.limit.upper
                 return Revolute(urdf_joint.axis, lower_limit, upper_limit)
+            elseif joint_type_name=="continuous"
+                return Revolute(urdf_joint.axis, -Inf, Inf)
             elseif joint_type_name=="prismatic"
                 lower_limit = urdf_joint.limit.lower
                 upper_limit = urdf_joint.limit.upper
                 return Prismatic(urdf_joint.axis, lower_limit, upper_limit)
-            else
+            elseif joint_type_name=="fixed"
                 return Fixed()
+            else
+                throw(Exception)
             end
         end
         jt = get_joint_type(urdf_joint.joint_type)
