@@ -57,8 +57,12 @@ mutable struct Mechanism
     joints::Vector{Joint}
     linkid_map::Dict{String, Int}
     jointid_map::Dict{String, Int}
+    tf_cache::CacheVector{Transform}
 end
-
+function Mechanism(links, joints, linkid_map, jointid_map)
+    tf_cache = CacheVector(length(links), zero(Transform))
+    Mechanism(links, joints, linkid_map, jointid_map, tf_cache)
+end
 
 parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
 child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]

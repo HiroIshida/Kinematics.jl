@@ -4,12 +4,26 @@ mutable struct Transform
     translation::SVector3f
     rotation::UnitQuaternion
 end
-function Transform(pos::SVector3f, rot::SVector4f)
-    Transform(pos, UnitQuaternion(rot...))
+
+@inline function Base.zero(::Type{Transform})
+    Transform(zero(SVector{3, Float64}), zero(UnitQuaternion))
 end
 
-function Transform() # returns identity transform
-    Transform(SVector3f([0, 0, 0]), SVector4f([0., 0., 0., 1.]))
+"""
+strange
+@inline function Base.inv(tf::Transform)
+    new_rot = inv(tf.rotation)
+    new_trans = -new_rot * tf.translation
+    Transform(new_trans, new_rot)
+end
+"""
+
+@inline function Transform(translation::SVector3f, rot::SVector4f)
+    Transform(translation, UnitQuaternion(rot))
+end
+
+@inline function Transform(translation::SVector3f, rpy::SVector3f)
+    Transform(translation, UnitQuaternion(RotXYZ(rpy...)))
 end
 
 function Transform(translation::SVector3f, rotmat::AbstractMatrix)
@@ -19,8 +33,12 @@ end
 
 function (*)(tf12::Transform, tf23::Transform)
     rot13 = tf12.rotation * tf23.rotation
-    tran13 = tf23.translation + tf23.rotation * tf12.translation
+    tran13 = tf12.rotation * tf12.translation + tf12.translation
     return Transform(tran13, rot13)
+end
+
+function (*)(tf::Transform, vec::SVector3f)
+    return tf.rotation * vec + tf.translation
 end
 
 
