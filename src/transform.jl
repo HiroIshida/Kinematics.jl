@@ -33,7 +33,7 @@ end
 
 function (*)(tf12::Transform, tf23::Transform)
     rot13 = tf12.rotation * tf23.rotation
-    tran13 = tf12.rotation * tf12.translation + tf12.translation
+    tran13 = tf12.rotation * tf23.translation + tf12.translation
     return Transform(tran13, rot13)
 end
 
