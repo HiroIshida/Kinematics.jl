@@ -15,11 +15,6 @@ function _get_transform(m::Mechanism, hlink::Link)
     hjoint = parent_joint(m, hlink)
     tf_plink_to_hjoint = hjoint.pose
     angle = joint_angle(m, hjoint)
-    """
-    println("debuggin =========== ")
-    println(typeof(hjoint))
-    println(angle)
-    """
 
     tf_plink_to_hlink = joint_transform(hjoint, tf_plink_to_hjoint, angle)
     tf_world_to_plink = get_transform(m, plink)
