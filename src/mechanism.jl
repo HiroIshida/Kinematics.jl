@@ -66,4 +66,18 @@ end
 mutable struct Mechanism
     links::Vector{Link}
     joints::Vector{Joint}
+    linkid_map::Dict{String, Int}
+    jointid_map::Dict{String, Int}
 end
+parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
+child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
+
+parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
+child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
+parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
+child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_idS]
+
+find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
+find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
+
+

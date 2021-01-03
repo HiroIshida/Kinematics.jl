@@ -1,28 +1,28 @@
 function parse_urdf(urdf_path)
     urdf_model = __skrobot__.utils.URDF.load(urdf_path)
-    joint_map = Dict()
+    jointid_map = Dict()
     for i in 1:length(urdf_model.joints)
         joint = urdf_model.joints[i]
-        joint_map[joint.name] = i
+        jointid_map[joint.name] = i
     end
 
-    link_map = Dict()
+    linkid_map = Dict()
     for i in 1:length(urdf_model.links)
         link = urdf_model.links[i]
-        link_map[link.name] = i
+        linkid_map[link.name] = i
     end
 
     links_tmp = []
     for urdf_link in urdf_model.links
-        id = link_map[urdf_link.name]
+        id = linkid_map[urdf_link.name]
         push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, []))
     end
 
     joints = []
     for urdf_joint in urdf_model.joints
-        id = joint_map[urdf_joint.name]
-        plink_id = link_map[urdf_joint.parent]
-        clink_id = link_map[urdf_joint.child]
+        id = jointid_map[urdf_joint.name]
+        plink_id = linkid_map[urdf_joint.parent]
+        clink_id = linkid_map[urdf_joint.child]
         position = urdf_joint.origin[1:3, 4]
         rotmat = urdf_joint.origin[1:3, 1:3]
 
@@ -54,7 +54,7 @@ function parse_urdf(urdf_path)
     end
 
     links = map(Link, links_tmp)
-    mech = Mechanism(links, joints)
+    mech = Mechanism(links, joints, linkid_map, jointid_map)
 end
 
 """

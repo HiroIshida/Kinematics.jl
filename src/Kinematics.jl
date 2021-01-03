@@ -11,7 +11,9 @@ const SVector3f = SVector{3, Float64}
 include("mechanism.jl")
 include("load_urdf.jl")
 
-export Mechanism, parse_urdf
+export Mechanism, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint
+export parse_urdf
+
 
 function __init__()
     copy!(__skrobot__, pyimport("skrobot"))
