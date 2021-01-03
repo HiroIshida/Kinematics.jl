@@ -10,7 +10,7 @@ function CacheVector(n_elem, default_elem)
 end
 
 function invalidate!(cv::CacheVector)
-    cv.iscached_vec = falses(length(cv.iscached_vec))
+    fill!(cv.iscached_vec, false)
     nothing
 end
 
