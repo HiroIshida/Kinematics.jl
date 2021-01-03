@@ -1,4 +1,4 @@
-mutable struct CacheVector{T}
+struct CacheVector{T}
     data::Vector{T}
     iscached_vec::BitVector
 end
