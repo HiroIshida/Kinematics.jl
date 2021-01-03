@@ -1,6 +1,5 @@
 using Rotations: rotation_between, Rotation, RotMatrix, UnitQuaternion, RotXYZ
 using StaticArrays
-using Lazy
 
 const SVector3f = SVector{3, Float64}
 
@@ -14,32 +13,36 @@ function Transform(position::SVector3f, rotmat::AbstractMatrix)
     return Transform(position, rotation)
 end
 
-abstract type Joint end
-getproperty(j::Joint)
 
-struct JointCommonData
+abstract type JointType end
+struct Revolute<:JointType
+    axis::SVector3f
+    lower_limit::Float64
+    upper_limit::Float64
+end
+Revolute(axis, lower_limit, upper_limit) = (Revolute(SVector3f(axis), lower_limit, upper_limit))
+Revolute(axis) = (Revolute(SVector3f(axis), -Inf, Inf))
+
+
+struct Fixed<:JointType end
+
+struct Joint{JT<:JointType}
+    name::String
     id::Int
     plink_id::Int
     clink_id::Int
     pose::Transform
+    jt::JT
 end
 
-struct RevoluteJoint<:Joint
-    common::JointCommonData
-    axis::SVector3f
-end 
-
-function RevoluteJoint(id, plink_id, clink_id, axis, position, rotmat)
-    position = SVector3f(position)
-    pose = Transform(position, rotmat)
-    common = JointCommonData(id, plink_id, clink_id, pose)
-    axis = SVector3f(axis)
-    RevoluteJoint(common, axis)
+function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:JointType}
+    pos = SVector3f(pos)
+    #rotmat = RotXYZ(rpy...)
+    pose = Transform(pos, rotmat)
+    Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
 
-#rj = RevoluteJoint(0, 0, 1, [0, 0, 1], [0, 0, 0], [0, 0, 0])
-
-struct FixedJoint<:Joint
-    pose::Transform
-    axis::SVector3f
-end 
+"""
+rev = Revolute([0, 0, 0])
+jt = Joint("hoge", 0, 0, 0, [1, 2, 3], [1, 2, 3], rev)
+"""
