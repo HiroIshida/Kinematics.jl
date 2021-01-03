@@ -73,21 +73,25 @@ mutable struct Mechanism
     linkid_map::Dict{String, Int}
     jointid_map::Dict{String, Int}
     tf_cache::CacheVector{Transform}
+    angles::Vector{Float64}
 end
 function Mechanism(links, joints, linkid_map, jointid_map)
     tf_cache = CacheVector(length(links), zero(Transform))
-    Mechanism(links, joints, linkid_map, jointid_map, tf_cache)
+    angles = zeros(length(joints))
+    Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles)
 end
 
-parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
-child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
+@inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
+@inline child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
 
-parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
-child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
-parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
-child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
+@inline parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
+@inline child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
+@inline parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
+@inline child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
 
-find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
-find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
-isroot(link::Link) = (link.plink_id==-1)
-isleaf(link::Link) = (isempty(link.clink_ids))
+@inline find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
+@inline find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
+@inline isroot(link::Link) = (link.plink_id==-1)
+@inline isleaf(link::Link) = (isempty(link.clink_ids))
+
+@inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]

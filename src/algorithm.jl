@@ -12,10 +12,10 @@ function get_transform_recursive(m::Mechanism, hlink::Link)
         return tf_world_to_root
     end
     plink = parent_link(m, hlink)
-    pjoint = parent_joint(m, hlink)
-    tf_plink_to_hjoint = pjoint.pose
-    angle = 0.0 # TODO DUMMY
-    tf_plink_to_hlink = joint_transform(pjoint, tf_plink_to_hjoint, angle)
+    hjoint = parent_joint(m, hlink)
+    tf_plink_to_hjoint = hjoint.pose
+    angle = joint_angle(m, hjoint)
+    tf_plink_to_hlink = joint_transform(hjoint, tf_plink_to_hjoint, angle)
     tf_world_to_plink = get_transform_recursive(m, plink)
     tf_world_to_hlink = tf_world_to_plink * tf_plink_to_hlink
     set_cache!(m.tf_cache, hlink.id, tf_world_to_hlink)
