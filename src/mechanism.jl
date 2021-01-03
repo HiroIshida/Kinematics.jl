@@ -17,24 +17,6 @@ struct Link
 end
 Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids)
 
-mutable struct Transform
-    positoin::SVector3f
-    rotation::UnitQuaternion
-end
-function Transform(pos::SVector3f, rot::SVector4f)
-    Transform(pos, UnitQuaternion(rot...))
-end
-
-function Transform() # returns identity transform
-    Transform(SVector3f([0, 0, 0]), SVector4f([0., 0., 0., 1.]))
-end
-
-function Transform(position::SVector3f, rotmat::AbstractMatrix)
-    rotation = UnitQuaternion(rotmat)
-    return Transform(position, rotation)
-end
-
-
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
     # code generation for movable joint type 

@@ -16,8 +16,11 @@ end
 debugging() = false
 
 include("cache.jl")
+include("transform.jl")
 include("mechanism.jl")
 include("load_urdf.jl")
+
+export Transform
 
 export CacheVector, invalidate!, set_cache!, iscached, get_cache
 
