@@ -43,3 +43,11 @@ for name in leaf_link_names
     @test isempty(link.cjoint_ids)
 end
 
+urdf_path = Kinematics.__skrobot__.data.pr2_urdfpath()
+pr2 = parse_urdf(urdf_path)
+froll_link = find_link(pr2, "r_forearm_roll_link")
+@test length(child_links(pr2, froll_link)) == 2
+@test length(child_joints(pr2, froll_link)) == 2
+@test child_links(pr2, froll_link)[1].name == "r_forearm_link"
+@test child_links(pr2, froll_link)[2].name == "r_forearm_cam_frame"
+
