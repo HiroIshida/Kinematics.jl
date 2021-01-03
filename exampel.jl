@@ -1,6 +1,8 @@
 using Kinematics
 import JSON
-f = open("./ground_truth.json", "r")
+using Test 
+
+f = open("./data/ground_truth.json", "r")
 gtruth_data = JSON.parse(read(f, String))
 close(f)
 
@@ -12,10 +14,13 @@ links = [find_link(mech, name) for name in gtruth_data["link_names"]]
 angles = gtruth_data["angle_vector"]
 poses_gtruth = gtruth_data["pose_list"]
 
+for (joint, angle) in zip(joints, angles)
+    set_joint_angle(mech, joint, angle)
+end
+
 invalidate!(mech)
 for (link, pose_gtruth) in zip(links, poses_gtruth)
     println(link.name)
-    tf2 = get_transform(mech, link)
-    println(tf2.translation)
-    println(pose_gtruth[1:3])
+    tf = get_transform(mech, link)
+    @test tf.translation ≈ pose_gtruth[1:3]
 end

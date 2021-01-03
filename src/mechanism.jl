@@ -58,7 +58,7 @@ end
 
 function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
     angle==0.0 && return plink_to_hjoint # no transform
-    q = UnitQuaternion(-0.5*sin(0.5*angle), (0.5*joint.jt.axis * cos(0.5*angle)...))
+    q = UnitQuaternion(cos(0.5*angle), (joint.jt.axis * sin(0.5*angle)...))
     hjoint_to_hlink = Transform(zero(SVector{3, Float64}), q)
     return plink_to_hjoint * hjoint_to_hlink
 end
