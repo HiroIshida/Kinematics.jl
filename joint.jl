@@ -16,13 +16,18 @@ end
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
+    # code generation for movable joint type 
     @eval begin
         struct $MovableJointType<:JointType
             axis::SVector3f
             lower_limit::Float64
             upper_limit::Float64
         end
+
+        # define methods related to movable joints
+
         $MovableJointType(axis, lower_limit, upper_limit) = ($MovableJointType(SVector3f(axis), lower_limit, upper_limit))
+
         $MovableJointType(axis) = (Revolute(SVector3f(axis), -Inf, Inf))
     end
 end

@@ -14,17 +14,24 @@ struct Mesh
     file_path
 end
 
-struct Link
-    joint_id
-    parent_link_id
-    child_link_id
+mutable struct Link_
+    name::String
+    id::Int
+    pjoint_id::Int
+    cjoint_ids::Vector{Int}
+    plink_id::Int
+    clink_ids::Vector{Int}
 end
 
-function generate_geometry_from_urdfpy(urdfpy_geometry)
-    if urdfpy_geometry.mesh
-    elseif urdfpy_geometry.box
-    end
+struct Link
+    name::String
+    id::Int
+    pjoint_id::Int
+    cjoint_ids::Vector{Int}
+    plink_id::Int
+    clink_ids::Vector{Int}
 end
+Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids)
 
 joint_map = Dict()
 for i in 1:length(urdf_model.joints)
@@ -38,7 +45,12 @@ for i in 1:length(urdf_model.links)
     link_map[link.name] = i
 end
 
-# not construct links
+links_tmp = []
+for urdf_link in urdf_model.links
+    id = link_map[urdf_link.name]
+    push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, []))
+end
+
 joints = []
 for urdf_joint in urdf_model.joints
     id = joint_map[urdf_joint.name]
@@ -61,7 +73,17 @@ for urdf_joint in urdf_model.joints
         end
     end
     jt = get_joint_type(urdf_joint.joint_type)
-    joint = Joint(urdf_model.name, id, plink_id, clink_id, position, rotmat, jt)
+    joint = Joint(urdf_joint.name, id, plink_id, clink_id, position, rotmat, jt)
     push!(joints, joint)
+    push!(joints, joint)
+
+    plink = links_tmp[joint.plink_id]
+    push!(plink.cjoint_ids, joint.id)
+    push!(plink.clink_ids, joint.clink_id)
+
+    clink = links_tmp[joint.clink_id]
+    clink.pjoint_id = joint.id
+    clink.plink_id = joint.plink_id
 end
 
+links = map(Link, links_tmp)
