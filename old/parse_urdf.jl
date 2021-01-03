@@ -19,46 +19,51 @@ struct Joint
     name
     type
     parent_to_joint_origin_transform::Pose
-    parent_link_name
-    child_link_name
     parent_link_id
     child_link_id
     # limits
 end
 
+function Joint(xml_joint::XMLElement, link_id_table, joint_id_table)
+    dict = attributes_dict(xml_joint)
+    name = dict["name"]
+    id = joint_id_table[name]
+    type = dict["type"]
+
+    parent_link_name = attribute(find_element(xml_joint, "parent"), "link")
+    child_link_name = attribute(find_element(xml_joint, "child"), "link")
+    parent_link_id = link_id_table[parent_link_name]
+    child_link_id = link_id_table[child_link_name]
+    
+    xml_pose = find_element(xml_joint, "origin")
+    parent_to_joint_origin_transform = Pose(xml_pose)
+
+    Joint(id, name, type, parent_to_joint_origin_transform,
+          parent_link_id, child_link_id)
+end
+
+
 struct Link
     id
     name
-end
-function Link(xml_link::XMLElement)
-    id = -1
-    dict = attributes_dict(xml_link)
-    name = dict["name"]
-    Link(id, name)
+    parent_joint
+    parent_link_id
+    child_link_ids
 end
 
-function Joint(xml_joint::XMLElement)
-    dict = attributes_dict(xml_joint)
-    id = -1
+function Link(xml_link::XMLElement, child_link_names, link_id_table, joint_id_table)
+    dict = attributes_dict(xml_link)
     name = dict["name"]
-    type = dict["type"]
-    println(type)
-    parent_link_name = attribute(find_element(xml_joint, "parent"), "link")
-    child_link_name = attribute(find_element(xml_joint, "child"), "link")
-    xml_pose = find_element(xml_joint, "origin")
-    parent_to_joint_origin_transform = Pose(xml_pose)
-    parent_link_id = -1
-    child_link_id = -1
-    Joint(id, name, type, parent_to_joint_origin_transform,
-          parent_link_name, child_link_name, parent_link_id, child_link_id)
+    id = link_id_table[name]
+    Link(id, name, -1, [])
 end
 
 
 mutable struct RobotModel
     link_id_table
     joint_id_table
-    link_arr
-    joint_arr
+    links
+    joints
 end
 function RobotModel(urdf_path)
     xdoc = parse_file(urdf_path)
@@ -66,34 +71,39 @@ function RobotModel(urdf_path)
     xml_links = get_elements_by_tagname(xroot, "link")
     xml_joints = get_elements_by_tagname(xroot, "joint")
 
-    joint_arr = []
+    link_id_table = Dict()
+    counter = 1
+    for xml_link in xml_links
+        link_name = attributes_dict(xml_link)["name"]
+        link_id_table[link_name] = counter
+        counter += 1
+    end
+
+    joint_id_table = Dict()
+    counter = 1
+    for xml_joint in xml_joints
+        joint_name = attributes_dict(xml_joint)["name"]
+        joint_id_table[joint_name] = counter
+        counter += 1
+    end
+
+    joints = []
     for xml_joint in xml_joints
         try
-            joint = Joint(xml_joint)
-            push!(joint_arr, joint)
+            joint = Joint(xml_joint, link_id_table, joint_id_table)
+            push!(joints, joint)
         catch e
             println("invalid joint is skipped")
         end
     end
 
-    link_arr = []
+    links = []
     for xml_link in xml_links
-        link = Link(xml_link)
-        push!(link_arr, link)
+        link = Link(xml_link, link_id_table, joint_id_table)
+        push!(links, link)
     end
 
-    link_id_table = Dict()
-    for id in 1:length(joint_arr)
-        name = joint_arr[id].name
-        link_id_table[name] = id
-    end
-
-    joint_id_table = Dict()
-    for id in 1:length(joint_arr)
-        name = joint_arr[id].name
-        joint_id_table[name] = id
-    end
-    return RobotModel(link_id_table, joint_id_table, link_arr, joint_arr)
+    
 end
 robot = RobotModel("fetch.urdf")
 
