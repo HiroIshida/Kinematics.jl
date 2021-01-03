@@ -42,7 +42,6 @@ function parse_urdf(urdf_path)
         jt = get_joint_type(urdf_joint.joint_type)
         joint = Joint(urdf_joint.name, id, plink_id, clink_id, position, rotmat, jt)
         push!(joints, joint)
-        push!(joints, joint)
 
         plink = links_tmp[joint.plink_id]
         push!(plink.cjoint_ids, joint.id)
