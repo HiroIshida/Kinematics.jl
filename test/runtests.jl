@@ -84,8 +84,12 @@ for (joint, angle) in zip(joints, angles)
     set_joint_angle(mech, joint, angle)
 end
 invalidate!(mech)
-for (link, pose_gtruth) in zip(links, poses_gtruth)
-    println(link.name)
-    tf = get_transform(mech, link)
-    @test tf.translation ≈ pose_gtruth[1:3]
+for i in 1:2
+    # check two times to check that cache is propery stored
+    for (link, pose_gtruth) in zip(links, poses_gtruth)
+        println("testing tf ... ")
+        println(link.name)
+        tf = get_transform(mech, link)
+        @test tf.translation ≈ pose_gtruth[1:3]
+    end
 end
