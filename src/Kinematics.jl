@@ -23,7 +23,7 @@ include("load_urdf.jl")
 
 include("algorithm.jl")
 
-export Transform
+export Transform, rotation, translation
 export CacheVector, invalidate!, set_cache!, iscached, get_cache
 export PseudoStack
 export parse_urdf

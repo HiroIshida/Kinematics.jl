@@ -45,10 +45,8 @@ struct Joint{JT<:JointType}
     jt::JT
 end
 
-function Joint(name, id, plink_id, clink_id, pos, rotmat, jt::JT) where {JT<:JointType}
-    pos = SVector3f(pos)
-    #rotmat = RotXYZ(rpy...)
-    pose = Transform(pos, rotmat)
+function Joint(name, id, plink_id, clink_id, transform, jt::JT) where {JT<:JointType}
+    pose = Transform(transform)
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
 
@@ -59,12 +57,12 @@ end
 function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
     angle==0.0 && return plink_to_hjoint # no transform
     q = UnitQuaternion(cos(0.5*angle), (joint.jt.axis * sin(0.5*angle)...))
-    return plink_to_hjoint * q
+    return plink_to_hjoint * Transform(q)
 end
 
 function joint_transform(joint::Joint{Prismatic}, plink_to_hjoint::Transform, angle)
     angle==0.0 && return plink_to_hjoint # no transform
-    return plink_to_hjoint * SVector3f(joint.jt.axis * angle)
+    return plink_to_hjoint * Transform(SVector3f(joint.jt.axis * angle))
 end
 
 mutable struct Mechanism

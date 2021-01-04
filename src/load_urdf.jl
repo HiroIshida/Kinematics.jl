@@ -23,8 +23,7 @@ function parse_urdf(urdf_path)
         id = jointid_map[urdf_joint.name]
         plink_id = linkid_map[urdf_joint.parent]
         clink_id = linkid_map[urdf_joint.child]
-        position = urdf_joint.origin[1:3, 4]
-        rotmat = urdf_joint.origin[1:3, 1:3]
+        transform = urdf_joint.origin
 
         function get_joint_type(joint_type_name)
             if joint_type_name=="revolute"
@@ -44,7 +43,7 @@ function parse_urdf(urdf_path)
             end
         end
         jt = get_joint_type(urdf_joint.joint_type)
-        joint = Joint(urdf_joint.name, id, plink_id, clink_id, position, rotmat, jt)
+        joint = Joint(urdf_joint.name, id, plink_id, clink_id, transform, jt)
         push!(joints, joint)
 
         plink = links_tmp[joint.plink_id]

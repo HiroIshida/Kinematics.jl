@@ -90,6 +90,6 @@ for i in 1:2
         println("testing tf ... ")
         println(link.name)
         tf = get_transform(mech, link)
-        @test tf.translation ≈ pose_gtruth[1:3]
+        @test translation(tf) ≈ pose_gtruth[1:3]
     end
 end
