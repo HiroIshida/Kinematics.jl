@@ -74,11 +74,19 @@ mutable struct Mechanism
     jointid_map::Dict{String, Int}
     tf_cache::CacheVector{Transform}
     angles::Vector{Float64}
+
+    # these two will be used in forward kinematics computation
+    # to "emulate" recursion in avoiding recursive call
+    link_id_stack::PseudoStack{Int64}
+    tf_stack::PseudoStack{Transform}
 end
 function Mechanism(links, joints, linkid_map, jointid_map)
-    tf_cache = CacheVector(length(links), zero(Transform))
+    n_links = length(links)
+    tf_cache = CacheVector(n_links, zero(Transform))
     angles = zeros(length(joints))
-    Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles)
+    link_id_stack = PseudoStack(Int64, n_links)
+    tf_stack = PseudoStack(Transform, n_links)
+    Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles, link_id_stack, tf_stack)
 end
 
 @inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
