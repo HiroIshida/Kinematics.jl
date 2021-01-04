@@ -89,21 +89,21 @@ function Mechanism(links, joints, linkid_map, jointid_map)
     Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles, link_id_stack, tf_stack)
 end
 
-@inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
-@inline child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
+@inbounds @inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
+@inbounds @inline child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
 
-@inline parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
-@inline child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
-@inline parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
-@inline child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
+@inbounds @inline parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
+@inbounds @inline child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
+@inbounds @inline parent_joint(m::Mechanism, link::Link) = m.joints[link.pjoint_id]
+@inbounds @inline child_joints(m::Mechanism, link::Link) = m.joints[link.cjoint_ids]
 
 @inline find_joint(m::Mechanism, joint_name) = m.joints[m.jointid_map[joint_name]]
 @inline find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
 @inline isroot(link::Link) = (link.plink_id==-1)
 @inline isleaf(link::Link) = (isempty(link.clink_ids))
 
-@inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]
-@inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (m.angles[joint.id] = angle)
+@inbounds @inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]
+@inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (m.angles[joint.id] = angle)
 
 # forwarding cache methods
 @inline invalidate!(m::Mechanism) = invalidate!(m.tf_cache)

@@ -16,17 +16,17 @@ end
 
 @inline function set_cache!(cv::CacheVector{T}, idx, elem::T) where T
     @debugassert cv.iscached_vec[idx] == false
-    cv.data[idx] = elem
-    cv.iscached_vec[idx] = true
+    @inbounds cv.data[idx] = elem
+    @inbounds cv.iscached_vec[idx] = true
     nothing
 end
 
 @inline function iscached(cv::CacheVector, idx)
-    return cv.iscached_vec[idx]
+    @inbounds return cv.iscached_vec[idx]
 end
 
 @inline function get_cache(cv::CacheVector, idx)
     @debugassert cv.iscached_vec[idx] == true
-    return cv.data[idx]
+    @inbounds return cv.data[idx]
 end
 
