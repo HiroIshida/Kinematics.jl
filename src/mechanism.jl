@@ -107,6 +107,8 @@ end
 
 # forwarding cache methods
 @inline invalidate!(m::Mechanism) = invalidate!(m.tf_cache)
-@inline set_cache!(m::Mechanism, link::Link, angle) = set_cache!(m.tf_cache, link.id, angle)
+@inline set_cache!(m::Mechanism, link::Link, tf) = set_cache!(m.tf_cache, link.id, tf)
+@inline set_cache!(m::Mechanism, link_id::Int64, tf) = set_cache!(m.tf_cache, link_id, tf)
 @inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)
+@inline get_cache(m::Mechanism, link_id::Int64) = get_cache(m.tf_cache, link_id)
 @inline iscached(m::Mechanism, link::Link) = iscached(m.tf_cache, link.id)
