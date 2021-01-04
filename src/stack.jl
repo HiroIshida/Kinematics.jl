@@ -12,12 +12,14 @@ function PseudoStack(T, n_max)
 end
 
 function Base.pop!(ps::PseudoStack) 
+    @debugassert ps.idx_top>0
     ps.idx_top -= 1
-    return ps.data[ps.idx_top+1]
+    @inbounds return ps.data[ps.idx_top+1]
 end
 
 function Base.push!(ps::PseudoStack, elem)
+    @debugassert ps.idx_top<=ps.n_max
     ps.idx_top += 1
-    ps.data[ps.idx_top] = elem
+    @inbounds ps.data[ps.idx_top] = elem
 end
 Base.isempty(ps::PseudoStack) = (ps.idx_top == 0)
