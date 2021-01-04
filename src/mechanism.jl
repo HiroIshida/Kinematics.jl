@@ -50,19 +50,19 @@ function Joint(name, id, plink_id, clink_id, transform, jt::JT) where {JT<:Joint
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
 
-@inline function joint_transform(joint::Joint{Fixed}, plink_to_hjoint::Transform, angle)
-    return plink_to_hjoint # is plink_to_hlink
+@inline function joint_transform(joint::Joint{Fixed}, angle)
+    return joint.pose # is plink_to_hlink
 end
 
-function joint_transform(joint::Joint{Revolute}, plink_to_hjoint::Transform, angle)
-    angle==0.0 && return plink_to_hjoint # no transform
+function joint_transform(joint::Joint{Revolute}, angle)
+    angle==0.0 && return joint.pose # no transform
     q = UnitQuaternion(cos(0.5*angle), (joint.jt.axis * sin(0.5*angle)...))
-    return plink_to_hjoint * Transform(q)
+    return joint.pose * Transform(q)
 end
 
-function joint_transform(joint::Joint{Prismatic}, plink_to_hjoint::Transform, angle)
-    angle==0.0 && return plink_to_hjoint # no transform
-    return plink_to_hjoint * Transform(SVector3f(joint.jt.axis * angle))
+function joint_transform(joint::Joint{Prismatic}, angle)
+    angle==0.0 && return joint.pose # no transform
+    return joint.pose * Transform(SVector3f(joint.jt.axis * angle))
 end
 
 mutable struct Mechanism

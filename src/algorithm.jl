@@ -16,10 +16,8 @@ function _get_transform(m::Mechanism, hlink::Link)
         end
         plink = parent_link(m, hlink)
         hjoint = parent_joint(m, hlink)
-        tf_plink_to_hjoint = hjoint.pose
         angle = joint_angle(m, hjoint)
-
-        tf_plink_to_hlink = joint_transform(hjoint, tf_plink_to_hjoint, angle)
+        tf_plink_to_hlink = joint_transform(hjoint, angle)
 
         push!(m.tf_stack, tf_plink_to_hlink)
         push!(m.link_id_stack, hlink.id)
