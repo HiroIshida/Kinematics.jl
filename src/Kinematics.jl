@@ -16,6 +16,7 @@ end
 debugging() = false
 
 include("cache.jl")
+include("stack.jl")
 include("transform.jl")
 include("mechanism.jl")
 include("load_urdf.jl")
@@ -24,6 +25,7 @@ include("algorithm.jl")
 
 export Transform
 export CacheVector, invalidate!, set_cache!, iscached, get_cache
+export PseudoStack
 export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle
 export get_transform

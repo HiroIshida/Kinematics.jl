@@ -14,6 +14,21 @@ set_cache!(cache, 2, 2.0)
 invalidate!(cache)
 @test_throws AssertionError get_cache(cache, 2)
 
+
+# testing stack
+n_max = 5
+ps = PseudoStack(Int64, n_max)
+for i in 1:n_max
+    push!(ps, i)
+end
+@test !isempty(ps)
+@test pop!(ps) == 5
+@test pop!(ps) == 4
+@test pop!(ps) == 3
+@test pop!(ps) == 2
+@test pop!(ps) == 1
+@test isempty(ps)
+
 # urdf load test
 urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
 mech = parse_urdf(urdf_path)
