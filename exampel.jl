@@ -2,25 +2,22 @@ using Kinematics
 import JSON
 using Test 
 
-f = open("./data/ground_truth.json", "r")
-gtruth_data = JSON.parse(read(f, String))
-close(f)
-
-urdf_path = Kinematics.__skrobot__.data.pr2_urdfpath()
-
+# benchmarking
+urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
 mech = parse_urdf(urdf_path)
-joints = [find_joint(mech, name) for name in gtruth_data["joint_names"]]
-links = [find_link(mech, name) for name in gtruth_data["link_names"]]
-angles = gtruth_data["angle_vector"]
-poses_gtruth = gtruth_data["pose_list"]
 
-for (joint, angle) in zip(joints, angles)
-    set_joint_angle(mech, joint, angle)
-end
+link_names = ["l_gripper_finger_link", "r_gripper_finger_link", "wrist_flex_link", "wrist_roll_link", "shoulder_lift_link", "upperarm_roll_link"];
+links = [find_link(mech, name) for name in link_names]
 
-invalidate!(mech)
-for (link, pose_gtruth) in zip(links, poses_gtruth)
-    println(link.name)
-    tf = get_transform(mech, link)
-    @test tf.translation ≈ pose_gtruth[1:3]
+function bench(mech, links)
+    for i in 1:1000000
+        invalidate!(mech)
+        for link in links
+            tf = get_transform(mech, link)
+        end
+    end
 end
+bench(mech, links) # dryrun
+
+using BenchmarkTools
+@btime bench(mech, links)
