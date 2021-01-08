@@ -15,7 +15,7 @@ function parse_urdf(urdf_path)
     links_tmp = []
     for urdf_link in urdf_model.links
         id = linkid_map[urdf_link.name]
-        push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, []))
+        push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, [], urdf_link))
     end
 
     joints = []

@@ -5,6 +5,7 @@ mutable struct Link_
     cjoint_ids::Vector{Int}
     plink_id::Int
     clink_ids::Vector{Int}
+    urdf_link::PyObject
 end
 
 struct Link
@@ -14,8 +15,9 @@ struct Link
     cjoint_ids::Vector{Int}
     plink_id::Int
     clink_ids::Vector{Int}
+    urdf_link::PyObject
 end
-Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids)
+Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.urdf_link)
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
