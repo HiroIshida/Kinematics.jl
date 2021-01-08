@@ -1,5 +1,8 @@
 to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 
+create_vis_object(md::BoxMetaData) = (Rect(Vec(0, 0, 0.), Vec(md.extents...)))
+create_vis_object(md::MeshMetaData) = (MeshFileGeometry(md.file_path))
+
 function update(vis::Visualizer, mech::Mechanism)
     for link in mech.links
         update(vis, mech, link)
@@ -8,14 +11,12 @@ function update(vis::Visualizer, mech::Mechanism)
 end
 
 function update(vis::Visualizer, mech::Mechanism, link::Link)
-    mesh = link.urdf_link.collision_mesh
-    if mesh!=nothing
-        tf_world_to_link = get_transform(mech, link)
-        tf_link_to_geom = Transform(mesh.metadata["origin"])
-        tf_world_to_geom = tf_world_to_link * tf_link_to_geom
-        settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
-    end
-    nothing
+    isnothing(link.geometric_meta_data) && return 
+
+    tf_world_to_link = get_transform(mech, link)
+    tf_link_to_geom = link.geometric_meta_data.origin
+    tf_world_to_geom = tf_world_to_link * tf_link_to_geom
+    settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
 end
 
 function add_mechanism(vis::Visualizer, mech::Mechanism)
@@ -27,23 +28,8 @@ function add_mechanism(vis::Visualizer, mech::Mechanism)
 end
 
 function add_link(vis::Visualizer, link::Link)
-    mesh = link.urdf_link.collision_mesh
-    if mesh!=nothing
-        is_loaded_from_file = haskey(mesh.metadata, "file_path")
-        if is_loaded_from_file
-            file_path = mesh.metadata["file_path"]
-            geometry = MeshFileGeometry(file_path)
-            setobject!(vis[link.name], geometry)
-        else # primitives
-            primitive_type = mesh.metadata["shape"]
-            if primitive_type=="box"
-                extents = mesh.metadata["extents"]
-                geometry = Rect(Vec(0., 0, 0), Vec(extents...))
-                setobject!(vis[link.name], geometry)
-            else
-                println("primitive type other than box is not supported yet")
-            end
-        end
-    end
+    isnothing(link.geometric_meta_data) && return 
+    vis_obj = create_vis_object(link.geometric_meta_data)
+    setobject!(vis[link.name], vis_obj)
 end
 

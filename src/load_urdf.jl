@@ -1,3 +1,22 @@
+function geo_mata_from_urdf_link(geom_urdf)
+    mesh = geom_urdf.collision_mesh
+    if mesh != nothing
+        is_loaded_from_file = haskey(mesh.metadata, "file_path")
+        if is_loaded_from_file
+            file_path = mesh.metadata["file_path"]
+            return MeshMetaData(file_path, Transform(mesh.metadata["origin"]))
+        else # primitives
+            primitive_type = mesh.metadata["shape"]
+            if primitive_type=="box"
+                extents = mesh.metadata["extents"]
+                return BoxMetaData(extents, Transform(mesh.metadata["origin"]))
+            else
+                println("primitive type other than box is not supported yet")
+            end
+        end
+    end
+end
+
 function parse_urdf(urdf_path)
     urdf_model = __skrobot__.utils.URDF.load(urdf_path)
     jointid_map = Dict()
@@ -15,7 +34,8 @@ function parse_urdf(urdf_path)
     links_tmp = []
     for urdf_link in urdf_model.links
         id = linkid_map[urdf_link.name]
-        push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, [], urdf_link))
+        geo_meta = geo_mata_from_urdf_link(urdf_link)
+        push!(links_tmp, Link_(urdf_link.name, id, -1, [], -1, [], geo_meta))
     end
 
     joints = []

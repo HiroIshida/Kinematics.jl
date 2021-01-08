@@ -1,3 +1,15 @@
+abstract type GeometricMetaData end
+
+struct BoxMetaData <: GeometricMetaData
+    extents::SVector{3, Float64}
+    origin::Transform
+end
+
+struct MeshMetaData <: GeometricMetaData
+    file_path::String
+    origin::Transform
+end
+
 mutable struct Link_
     name::String
     id::Int
@@ -5,7 +17,7 @@ mutable struct Link_
     cjoint_ids::Vector{Int}
     plink_id::Int
     clink_ids::Vector{Int}
-    urdf_link::PyObject
+    geometric_meta_data::Union{GeometricMetaData, Nothing}
 end
 
 struct Link
@@ -15,9 +27,9 @@ struct Link
     cjoint_ids::Vector{Int}
     plink_id::Int
     clink_ids::Vector{Int}
-    urdf_link::PyObject
+    geometric_meta_data::Union{GeometricMetaData, Nothing}
 end
-Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.urdf_link)
+Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data)
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
