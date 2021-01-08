@@ -23,10 +23,9 @@ end
 end
 
 @inline function Transform(trans::SVector3f)
-    R = convert(RotMatrix3{Float64}, rot)
-    @inbounds mat = @SMatrix [0 0 0 trans[1];
-                              0 0 0 trans[2];
-                              0 0 0 trans[3];
+    @inbounds mat = @SMatrix [1 0 0 trans[1];
+                              0 1 0 trans[2];
+                              0 0 1 trans[3];
                               0 0 0 1]
     Transform(mat)
 end
