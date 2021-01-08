@@ -80,10 +80,7 @@ links = [find_link(mech, name) for name in gtruth_data["link_names"]]
 angles = gtruth_data["angle_vector"]
 poses_gtruth = gtruth_data["pose_list"]
 
-for (joint, angle) in zip(joints, angles)
-    set_joint_angle(mech, joint, angle)
-end
-invalidate_cache!(mech)
+set_joint_angles(mech, joints, angles)
 for i in 1:2
     # check two times to check that cache is propery stored
     for (link, pose_gtruth) in zip(links, poses_gtruth)

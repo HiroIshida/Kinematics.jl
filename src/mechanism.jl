@@ -115,7 +115,23 @@ end
 @inline isleaf(link::Link) = (isempty(link.clink_ids))
 
 @inbounds @inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]
-@inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (m.angles[joint.id] = angle)
+
+@inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (set_joint_angle(m, joint.id, angle))
+@inbounds set_joint_angle(m::Mechanism, joint_id::Int, angle) = (m.angles[joint_id] = angle; invalidate_cache!(m))
+
+function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
+    for (joint, a) in zip(joints, angles)
+        m.angles[joint.id] = a
+    end
+    invalidate_cache!(m)
+end
+
+function set_joint_angles(m::Mechanism, joint_ids::Vector{Int}, angles)
+    for (id, a) in zip(joint_ids, angles)
+        m.angles[id] = a
+    end
+    invalidate_cache!(m)
+end
 
 # forwarding cache methods
 @inline invalidate_cache!(m::Mechanism) = invalidate!(m.tf_cache)
