@@ -23,56 +23,48 @@ bench(mech, links) # dryrun
 
 using BenchmarkTools
 @time bench(mech, links)
-links = mech.links
-ulink = links[1].urdf_link
-mesh = ulink.collision_mesh
-path = mesh.metadata["file_path"]
 
 using MeshCat
+using GeometryBasics
 using CoordinateTransformations
+using LinearAlgebra
 
+to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 
 function add_link_to_vis(link, vis)
     mesh = link.urdf_link.collision_mesh
+    tf_world_to_link = get_transform(mech, link)
     if mesh!=nothing
+        tf_link_to_geom = Transform(mesh.metadata["origin"])
+        mat = inv(tf_link_to_geom.mat)
+        tf_world_to_geom = tf_world_to_link * Transform(mat)
+        #tf_world_to_geom = tf_world_to_link
+        tf_world_to_geom = tf_world_to_link * tf_link_to_geom
+
         is_loaded_from_file = haskey(mesh.metadata, "file_path")
         if is_loaded_from_file
             file_path = mesh.metadata["file_path"]
             println(file_path)
             geometry = MeshFileGeometry(file_path)
             setobject!(vis[link.name], geometry)
-            
-            tf = get_transform(mech, link)
-            to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
-            settransform!(vis[link.name], to_affine_map(tf))
+            settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
         else # primitives
             primitive_type = mesh.metadata["shape"]
             if primitive_type=="box"
                 extents = mesh.metadata["extents"]
+                geometry = Rect(Vec(0., 0, 0), Vec(extents...))
+                setobject!(vis[link.name], geometry)
+                println(translation(tf_world_to_geom))
+                settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
             else
                 println("primitive type other than box is not supported yet")
             end
-            """ python code
-            elif shape == 'cylinder':
-                height = mesh.metadata['height']
-                radius = mesh.metadata['radius']
-                sdf = CylinderSDF([0, 0, 0], radius=radius, height=height)
-            elif shape == 'sphere':
-                radius = mesh.metadata['radius']
-                sdf = SphereSDF([0, 0, 0], radius)
-            """
         end
     end
 end
 
 vis = Visualizer()
-for link in links
+for link in mech.links
     add_link_to_vis(link, vis)
-        """
-        origin = Transform(mesh.metadata["origin"])
-        tf = get_transform(mech, link)
-
-        setobject!(vis, mesh_file_objects[1])
-        """
 end
-#open(vis)
+open(vis)
