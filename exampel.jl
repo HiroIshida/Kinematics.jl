@@ -29,17 +29,22 @@ mesh = ulink.collision_mesh
 path = mesh.metadata["file_path"]
 
 using MeshCat
+using CoordinateTransformations
 
-mesh_list = [link.urdf_link.collision_mesh for link in links]
-mesh_file_objects = []
-for mesh in mesh_list
+
+function add_link_to_vis(link, vis)
+    mesh = link.urdf_link.collision_mesh
     if mesh!=nothing
         is_loaded_from_file = haskey(mesh.metadata, "file_path")
         if is_loaded_from_file
             file_path = mesh.metadata["file_path"]
             println(file_path)
-            mesh_file_obj = MeshFileGeometry(file_path)
-            push!(mesh_file_objects, mesh_file_obj)
+            geometry = MeshFileGeometry(file_path)
+            setobject!(vis[link.name], geometry)
+            
+            tf = get_transform(mech, link)
+            to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
+            settransform!(vis[link.name], to_affine_map(tf))
         else # primitives
             primitive_type = mesh.metadata["shape"]
             if primitive_type=="box"
@@ -57,16 +62,17 @@ for mesh in mesh_list
                 sdf = SphereSDF([0, 0, 0], radius)
             """
         end
-        origin = Transform(mesh.metadata["origin"])
     end
 end
+
 vis = Visualizer()
-open(vis)
-setobject!(vis, mesh_file_objects[1])
+for link in links
+    add_link_to_vis(link, vis)
+        """
+        origin = Transform(mesh.metadata["origin"])
+        tf = get_transform(mech, link)
 
-
-"""
-        else:
-            msg = "primtive type {0} is not supported".format(shape)
-            raise ValueError(msg)
-"""
+        setobject!(vis, mesh_file_objects[1])
+        """
+end
+#open(vis)
