@@ -13,7 +13,7 @@ links = [find_link(mech, name) for name in link_names]
 
 function bench(mech, links)
     for i in 1:1000000
-        invalidate!(mech)
+        invalidate_cache!(mech)
         for link in links
             tf = get_transform(mech, link)
         end
@@ -31,14 +31,12 @@ using LinearAlgebra
 
 to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 
+
 function add_link_to_vis(link, vis)
     mesh = link.urdf_link.collision_mesh
     tf_world_to_link = get_transform(mech, link)
     if mesh!=nothing
         tf_link_to_geom = Transform(mesh.metadata["origin"])
-        mat = inv(tf_link_to_geom.mat)
-        tf_world_to_geom = tf_world_to_link * Transform(mat)
-        #tf_world_to_geom = tf_world_to_link
         tf_world_to_geom = tf_world_to_link * tf_link_to_geom
 
         is_loaded_from_file = haskey(mesh.metadata, "file_path")
@@ -63,7 +61,12 @@ function add_link_to_vis(link, vis)
     end
 end
 
+
 vis = Visualizer()
+
+joint = find_joint(mech, "shoulder_lift_joint")
+set_joint_angle(mech, joint, -1.0)
+invalidate_cache!(mech)
 for link in mech.links
     add_link_to_vis(link, vis)
 end
