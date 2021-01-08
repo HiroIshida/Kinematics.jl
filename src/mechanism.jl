@@ -106,7 +106,7 @@ end
 @inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (m.angles[joint.id] = angle)
 
 # forwarding cache methods
-@inline invalidate!(m::Mechanism) = invalidate!(m.tf_cache)
+@inline invalidate_cache!(m::Mechanism) = invalidate!(m.tf_cache)
 @inline set_cache!(m::Mechanism, link::Link, tf) = set_cache!(m.tf_cache, link.id, tf)
 @inline set_cache!(m::Mechanism, link_id::Int64, tf) = set_cache!(m.tf_cache, link_id, tf)
 @inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)

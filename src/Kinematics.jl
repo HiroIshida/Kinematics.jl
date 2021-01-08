@@ -24,7 +24,7 @@ include("load_urdf.jl")
 include("algorithm.jl")
 
 export Transform, rotation, translation
-export CacheVector, invalidate!, set_cache!, iscached, get_cache
+export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache
 export PseudoStack
 export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle

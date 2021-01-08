@@ -11,7 +11,7 @@ set_cache!(cache, 2, 2.0)
 @test iscached(cache, 2)
 @test_throws AssertionError get_cache(cache, 1)
 @test_throws AssertionError set_cache!(cache, 2, 2.0)
-invalidate!(cache)
+Kinematics.invalidate!(cache)
 @test_throws AssertionError get_cache(cache, 2)
 
 
@@ -83,7 +83,7 @@ poses_gtruth = gtruth_data["pose_list"]
 for (joint, angle) in zip(joints, angles)
     set_joint_angle(mech, joint, angle)
 end
-invalidate!(mech)
+invalidate_cache!(mech)
 for i in 1:2
     # check two times to check that cache is propery stored
     for (link, pose_gtruth) in zip(links, poses_gtruth)
