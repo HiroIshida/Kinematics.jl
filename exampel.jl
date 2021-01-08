@@ -27,4 +27,6 @@ using BenchmarkTools
 using MeshCat
 vis = Visualizer()
 add_mechanism(vis, mech)
-open(vis)
+set_joint_angle(mech, find_joint(mech, "upperarm_roll_joint"), 0.4)
+invalidate_cache!(mech)
+update(vis, mech)

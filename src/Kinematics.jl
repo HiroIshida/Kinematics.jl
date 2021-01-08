@@ -34,7 +34,10 @@ export PseudoStack
 export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle
 export get_transform
-export add_mechanism
+
+# from visual.jl
+export add_mechanism, update
+
 export __skrobot__
 
 
