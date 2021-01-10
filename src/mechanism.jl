@@ -79,12 +79,21 @@ function joint_transform(joint::Joint{Prismatic}, angle)
     return joint.pose * Transform(SVector3f(joint.jt.axis * angle))
 end
 
+struct FloatingAxis
+    origin::SVector3f
+    axis::SVector3f
+end
+function Base.one(::Type{FloatingAxis})
+    FloatingAxis([0, 0, 0], [1, 0, 0])
+end
+
 mutable struct Mechanism
     links::Vector{Link}
     joints::Vector{Joint}
     linkid_map::Dict{String, Int}
     jointid_map::Dict{String, Int}
     tf_cache::CacheVector{Transform}
+    axis_cache::CacheVector{FloatingAxis}
     angles::Vector{Float64}
 
     # these two will be used in forward kinematics computation
@@ -94,15 +103,20 @@ mutable struct Mechanism
 end
 function Mechanism(links, joints, linkid_map, jointid_map)
     n_links = length(links)
-    tf_cache = CacheVector(n_links, zero(Transform))
+    n_joints = length(joints)
+    tf_cache = CacheVector(n_links, zero(Transform)) # TODO should be zero -> one
+    axis_cache = CacheVector(n_joints, one(FloatingAxis))
+
     angles = zeros(length(joints))
     link_id_stack = PseudoStack(Int64, n_links)
     tf_stack = PseudoStack(Transform, n_links)
-    Mechanism(links, joints, linkid_map, jointid_map, tf_cache, angles, link_id_stack, tf_stack)
+    Mechanism(links, joints, linkid_map, jointid_map,
+        tf_cache, axis_cache,
+        angles, link_id_stack, tf_stack)
 end
 
-@inbounds @inline parent_link(m::Mechanism, joint::JointType) = m.links[joint.plink_id]
-@inbounds @inline child_link(m::Mechanism, joint::JointType) = m.links[joint.clink_id]
+@inbounds @inline parent_link(m::Mechanism, joint::Joint) = m.links[joint.plink_id]
+@inbounds @inline child_link(m::Mechanism, joint::Joint) = m.links[joint.clink_id]
 
 @inbounds @inline parent_link(m::Mechanism, link::Link) = m.links[link.plink_id]
 @inbounds @inline child_links(m::Mechanism, link::Link) = m.links[link.clink_ids]
@@ -140,3 +154,5 @@ end
 @inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)
 @inline get_cache(m::Mechanism, link_id::Int64) = get_cache(m.tf_cache, link_id)
 @inline iscached(m::Mechanism, link::Link) = iscached(m.tf_cache, link.id)
+
+

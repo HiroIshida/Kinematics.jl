@@ -32,3 +32,42 @@ function _get_transform(m::Mechanism, hlink::Link)
     end
     return tf_world_to_hlink
 end
+
+# TODO cache joint axes
+# TODO reduce computation time for joint axis by definining type of axis x, y, z
+# which simplifies M * vec to just M[1:3, 1]
+function _get_joint_axis(m::Mechanism, hjoint::Joint)
+    @debugassert type(hjoint) != Joint{Fixed} # fixed joint does not have axis
+
+    iscached(m.axis_cache, hjoint.id) && (return get_cache(m.axis_cache, hjoint.id))
+
+    tf_world_to_plink = get_transform(m, parent_link(m, hjoint))
+    tf_world_to_hjoint = tf_world_to_plink * hjoint.pose
+    origin = translation(tf_world_to_hjoint)
+    axis = rotation(tf_world_to_hjoint) * hjoint.jt.axis
+    faxis = FloatingAxis(origin, axis)
+    set_cache!(m.axis_cache, hjoint.id, faxis)
+    return faxis
+end
+
+function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
+        with_rot::Bool,
+        mat_out::AbstractMatrix) where J<:Joint
+    tf_world_to_link = get_transform(m, link)
+    for i in 1:length(joints)
+        joint = joints[i]
+        faxis = _get_joint_axis(m, joint)
+        diff = cross(faxis.axis, translation(tf_world_to_link) - faxis.origin)
+        mat_out[1:3, i] = diff
+        if with_rot
+            mat_out[4:6, i] = faxis.axis
+        end
+    end
+end
+
+function get_jacobian(m::Mechanism, link::Link, joints::Vector{J}, with_rot::Bool) where J<:Joint
+    rows = (with_rot ? 6 : 3)
+    jacobian = zeros(Float64, rows, length(joints))
+    get_jacobian!(m, link, joints, with_rot, jacobian)
+    return jacobian
+end

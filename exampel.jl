@@ -24,6 +24,15 @@ bench(mech, links) # dryrun
 using BenchmarkTools
 @time bench(mech, links)
 
+joint_names = ["shoulder_pan_joint", "shoulder_lift_joint",
+               "upperarm_roll_joint", "elbow_flex_joint",
+               "forearm_roll_joint", "wrist_flex_joint", "wrist_roll_joint"]
+joints = [find_joint(mech, name) for name in joint_names]
+
+J = get_jacobian(mech, find_link(mech, "l_gripper_finger_link"), joints, true)
+display(J)
+
+
 using MeshCat
 vis = Visualizer()
 add_mechanism(vis, mech)

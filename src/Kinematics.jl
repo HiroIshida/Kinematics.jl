@@ -5,6 +5,7 @@ const __skrobot__ = PyCall.PyNULL()
 
 using Rotations
 using StaticArrays
+using LinearAlgebra
 
 using MeshCat
 using GeometryBasics
@@ -33,7 +34,9 @@ export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache
 export PseudoStack
 export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle, set_joint_angles
-export get_transform
+
+# from algorithm.jl
+export get_transform, get_jacobian, get_jacobian!
 
 # from visual.jl
 export add_mechanism, update
