@@ -66,6 +66,29 @@ froll_link = find_link(pr2, "r_forearm_roll_link")
 @test child_links(pr2, froll_link)[1].name == "r_forearm_link"
 @test child_links(pr2, froll_link)[2].name == "r_forearm_cam_frame"
 
+# rptable test PR2
+urdf_path = Kinematics.__skrobot__.data.pr2_urdfpath()
+mech = parse_urdf(urdf_path)
+
+torso_joint = find_joint(mech, "torso_lift_joint")
+wrist_joint = find_joint(mech, "r_wrist_flex_joint")
+head_link = find_link(mech, "head_pan_link")
+caster_link = find_link(mech, "fl_caster_rotation_link")
+
+@test is_relevant(mech, torso_joint, head_link)
+@test !is_relevant(mech, torso_joint, caster_link)
+@test !is_relevant(mech, wrist_joint, head_link)
+@test !is_relevant(mech, wrist_joint, caster_link)
+
+# rptable test fetch
+urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
+mech = parse_urdf(urdf_path)
+shoulder_joint = find_joint(mech, "shoulder_pan_joint")
+wrist_link = find_link(mech, "wrist_roll_link")
+base_link = find_link(mech, "base_link")
+@test is_relevant(mech, shoulder_joint, wrist_link)
+@test !is_relevant(mech, shoulder_joint, base_link)
+
 # kinematics test
 import JSON
 f = open("../data/ground_truth.json", "r")

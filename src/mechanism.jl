@@ -87,32 +87,28 @@ function Base.one(::Type{FloatingAxis})
     FloatingAxis([0, 0, 0], [1, 0, 0])
 end
 
-mutable struct RelevancePredicateTable
-    table::Vector{BitVector}
+function create_rptable(links::Vector{Link}, joints::Vector{Joint})
+    n_link = length(links)
+    n_joint = length(joints)
 
-    function RelevancePredicateTable(links::Vector{Link}, joints::Vector{Joint})
-        n_link = length(links)
-        n_joint = length(joints)
-
-        table = Vector{BitVector}(undef, n_joint)
-        for i in 1:n_joint
-            table[i] = falses(n_link)
-        end
-
-        # For clarity. Because this is not performance critical part.
-        function recursion(joint, clink)
-            table[joint.id][clink.id] = true
-            for clink_id in clink.clink_ids
-                recursion(joint, links[clink_id])
-            end
-        end
-
-        for joint in joints
-            clink = links[joint.clink_id]
-            recursion(joint, clink)
-        end
-        new(table)
+    table = Vector{BitVector}(undef, n_joint)
+    for i in 1:n_joint
+        table[i] = falses(n_link)
     end
+
+    # For clarity. Because this is not performance critical part.
+    function recursion(joint, clink)
+        table[joint.id][clink.id] = true
+        for clink_id in clink.clink_ids
+            recursion(joint, links[clink_id])
+        end
+    end
+
+    for joint in joints
+        clink = links[joint.clink_id]
+        recursion(joint, clink)
+    end
+    return table
 end
 
 mutable struct Mechanism
@@ -124,7 +120,7 @@ mutable struct Mechanism
     axis_cache::CacheVector{FloatingAxis}
     angles::Vector{Float64}
 
-    rptable::RelevancePredicateTable
+    rptable::Vector{BitVector}
 
     # these two will be used in forward kinematics computation
     # to "emulate" recursion in avoiding recursive call
@@ -137,7 +133,7 @@ function Mechanism(links, joints, linkid_map, jointid_map)
     tf_cache = CacheVector(n_links, zero(Transform)) # TODO should be zero -> one
     axis_cache = CacheVector(n_joints, one(FloatingAxis))
 
-    rptable = RelevancePredicateTable(links, Vector{Joint}(joints)) # TODO any better way?
+    rptable = create_rptable(links, Vector{Joint}(joints)) # TODO any better way?
 
     angles = zeros(length(joints))
     link_id_stack = PseudoStack(Int64, n_links)
@@ -186,3 +182,5 @@ end
 @inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)
 @inline get_cache(m::Mechanism, link_id::Int64) = get_cache(m.tf_cache, link_id)
 @inline iscached(m::Mechanism, link::Link) = iscached(m.tf_cache, link.id)
+
+@inline is_relevant(m::Mechanism, joint::Joint, link::Link) = m.rptable[joint.id][link.id]
