@@ -37,7 +37,7 @@ end
 # TODO reduce computation time for joint axis by definining type of axis x, y, z
 # which simplifies M * vec to just M[1:3, 1]
 function _get_joint_axis(m::Mechanism, hjoint::Joint)
-    @debugassert type(hjoint) != Joint{Fixed} # fixed joint does not have axis
+    @debugassert typeof(hjoint) != Joint{Fixed} # fixed joint does not have axis
 
     iscached(m.axis_cache, hjoint.id) && (return get_cache(m.axis_cache, hjoint.id))
 
@@ -50,17 +50,28 @@ function _get_joint_axis(m::Mechanism, hjoint::Joint)
     return faxis
 end
 
+function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Revolute}, tf_world_to_link, with_rot, mat_out)
+    faxis = _get_joint_axis(m, joint)
+    diff = cross(faxis.axis, translation(tf_world_to_link) - faxis.origin)
+    mat_out[1:3] = diff
+    if with_rot
+        mat_out[4:6] = faxis.axis
+    end
+end
+
+function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Prismatic}, tf_world_to_link, with_rot, mat_out)
+    faxis = _get_joint_axis(m, joint)
+    mat_out[1:3] = faxis.axis
+end
+
 function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
         with_rot::Bool,
         mat_out::AbstractMatrix) where J<:Joint
     tf_world_to_link = get_transform(m, link)
     for i in 1:length(joints)
         joint = joints[i]
-        faxis = _get_joint_axis(m, joint)
-        diff = cross(faxis.axis, translation(tf_world_to_link) - faxis.origin)
-        mat_out[1:3, i] = diff
-        if with_rot
-            mat_out[4:6, i] = faxis.axis
+        if is_relevant(m, joint, link)
+            joint_jacobian!(m, link, joint, tf_world_to_link, with_rot, @view mat_out[:, i])
         end
     end
 end

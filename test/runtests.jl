@@ -76,6 +76,7 @@ head_link = find_link(mech, "head_pan_link")
 caster_link = find_link(mech, "fl_caster_rotation_link")
 
 @test is_relevant(mech, torso_joint, head_link)
+@test is_relevant(mech, torso_joint, find_link(mech, "torso_lift_link"))
 @test !is_relevant(mech, torso_joint, caster_link)
 @test !is_relevant(mech, wrist_joint, head_link)
 @test !is_relevant(mech, wrist_joint, caster_link)
@@ -86,10 +87,11 @@ mech = parse_urdf(urdf_path)
 shoulder_joint = find_joint(mech, "shoulder_pan_joint")
 wrist_link = find_link(mech, "wrist_roll_link")
 base_link = find_link(mech, "base_link")
+@test is_relevant(mech, find_joint(mech, "torso_lift_joint"), find_link(mech, "torso_lift_link"))
 @test is_relevant(mech, shoulder_joint, wrist_link)
 @test !is_relevant(mech, shoulder_joint, base_link)
 
-# kinematics test
+# kinematics test (testing get_transform)
 import JSON
 f = open("../data/ground_truth.json", "r")
 gtruth_data = JSON.parse(read(f, String))
@@ -113,3 +115,24 @@ for i in 1:2
         @test translation(tf) ≈ pose_gtruth[1:3]
     end
 end
+
+# kinematics test (testing get_jacobian)
+# TODO test quaternion jacobian
+eps = 1e-7
+for link in mech.links
+    set_joint_angles(mech, joints, angles)
+    J_analytical = get_jacobian(mech, link, joints, false)
+    J_numerical = zeros(3, length(joints))
+    pose0 = get_transform(mech, link)
+    for i in 1:length(joints)
+        angles_ = copy(angles)
+        angles_[i] += eps
+        set_joint_angles(mech, joints, angles_)
+        pose1 = get_transform(mech, link)
+        J_numerical[:, i] = (translation(pose1) - translation(pose0))/eps
+    end
+    println("testing..." * link.name)
+    @test isapprox(J_numerical, J_analytical, atol=1e-5) 
+    println("[PASS] jacobian of " * link.name)
+end
+
