@@ -176,7 +176,7 @@ function set_joint_angles(m::Mechanism, joint_ids::Vector{Int}, angles)
 end
 
 # forwarding cache methods
-@inline invalidate_cache!(m::Mechanism) = invalidate!(m.tf_cache)
+@inline invalidate_cache!(m::Mechanism) = (invalidate!(m.tf_cache); invalidate!(m.axis_cache))
 @inline set_cache!(m::Mechanism, link::Link, tf) = set_cache!(m.tf_cache, link.id, tf)
 @inline set_cache!(m::Mechanism, link_id::Int64, tf) = set_cache!(m.tf_cache, link_id, tf)
 @inline get_cache(m::Mechanism, link::Link) = get_cache(m.tf_cache, link.id)

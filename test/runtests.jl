@@ -119,20 +119,24 @@ end
 # kinematics test (testing get_jacobian)
 # TODO test quaternion jacobian
 eps = 1e-7
-for link in mech.links
-    set_joint_angles(mech, joints, angles)
-    J_analytical = get_jacobian(mech, link, joints, false)
-    J_numerical = zeros(3, length(joints))
-    pose0 = get_transform(mech, link)
-    for i in 1:length(joints)
-        angles_ = copy(angles)
-        angles_[i] += eps
-        set_joint_angles(mech, joints, angles_)
-        pose1 = get_transform(mech, link)
-        J_numerical[:, i] = (translation(pose1) - translation(pose0))/eps
+angles1 = angles
+angles2 = angles1 * 0 # to test propery cache is deleted
+for angles in [angles1, angles2]
+    for link in mech.links
+        set_joint_angles(mech, joints, angles)
+        J_analytical = get_jacobian(mech, link, joints, false)
+        J_numerical = zeros(3, length(joints))
+        pose0 = get_transform(mech, link)
+        for i in 1:length(joints)
+            angles_ = copy(angles)
+            angles_[i] += eps
+            set_joint_angles(mech, joints, angles_)
+            pose1 = get_transform(mech, link)
+            J_numerical[:, i] = (translation(pose1) - translation(pose0))/eps
+        end
+        println("testing..." * link.name)
+        @test isapprox(J_numerical, J_analytical, atol=1e-5) 
+        println("[PASS] jacobian of " * link.name)
     end
-    println("testing..." * link.name)
-    @test isapprox(J_numerical, J_analytical, atol=1e-5) 
-    println("[PASS] jacobian of " * link.name)
 end
 
