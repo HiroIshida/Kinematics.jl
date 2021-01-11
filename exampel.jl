@@ -40,7 +40,7 @@ angles = [0.0 for _ in 1:8]
 function bench_jacobian(mech, links, joints)
     J = zeros(3, length(joints))
     for i in 1:100000
-        [set_joint_angle(mech, j, a) for (j, a) in zip(joints, angles)]
+        set_joint_angles(mech, joints, angles)
         for link in links
             get_jacobian!(mech, link, joints, false, J)
         end
