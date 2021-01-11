@@ -49,8 +49,16 @@ end
 @time bench_jacobian(mech, links, joints)
 
 using MeshCat
+using GeometryBasics
+using CoordinateTransformations
+
 vis = Visualizer()
 add_mechanism(vis, mech)
 set_joint_angle(mech, find_joint(mech, "upperarm_roll_joint"), 0.4)
 invalidate_cache!(mech)
-update(vis, mech)
+
+tf_roll = get_transform(mech, find_link(mech, "upperarm_roll_link"))
+tf_elbow = get_transform(mech, find_link(mech, "l_gripper_finger_link"))
+add_frame(vis[:finger], tf_elbow)
+add_frame(vis[:roll], tf_roll)
+open(vis)

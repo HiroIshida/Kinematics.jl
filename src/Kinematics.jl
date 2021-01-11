@@ -10,6 +10,8 @@ using LinearAlgebra
 using MeshCat
 using GeometryBasics
 using CoordinateTransformations
+using Colors: Color, Colorant, RGB, RGBA, alpha, hex, red, green, blue
+using UUIDs
 
 const SVector3f = SVector{3, Float64}
 const SVector4f = SVector{4, Float64}
@@ -39,7 +41,7 @@ export Mechanism, Transform, parent_link, child_link, child_links, parent_joint,
 export get_transform, get_jacobian, get_jacobian!
 
 # from visual.jl
-export add_mechanism, update
+export add_mechanism, update, add_frame
 
 export __skrobot__
 

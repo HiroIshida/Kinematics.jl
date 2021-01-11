@@ -33,3 +33,31 @@ function add_link(vis::Visualizer, link::Link)
     setobject!(vis[link.name], vis_obj)
 end
 
+
+function rgb_material(rgb::AbstractArray)
+    material = MeshCat.defaultmaterial()
+    material.color = RGB(rgb...)
+    return material
+end
+red_material() = rgb_material([1, 0, 0])
+blue_material() = rgb_material([0, 1, 0])
+green_material() = rgb_material([0, 0, 1])
+
+function add_frame(vis::Visualizer, tf_world_to_here::Transform; length=0.2)
+    avis1 = ArrowVisualizer(vis[:xaxis])
+    avis2 = ArrowVisualizer(vis[:yaxis])
+    avis3 = ArrowVisualizer(vis[:zaxis])
+
+    setobject!(avis1, red_material())
+    setobject!(avis2, blue_material())
+    setobject!(avis3, green_material())
+    origin = translation(tf_world_to_here)
+    rotmat = rotation(tf_world_to_here)
+
+    e1 = rotmat[:, 1] * length
+    e2 = rotmat[:, 2] * length
+    e3 = rotmat[:, 3] * length
+    settransform!(avis1, Point(origin...), Vec(e1...))
+    settransform!(avis2, Point(origin...), Vec(e2...))
+    settransform!(avis3, Point(origin...), Vec(e3...))
+end
