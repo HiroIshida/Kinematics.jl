@@ -1,5 +1,7 @@
 using Kinematics
 using Test 
+using Rotations
+
 Kinematics.debugging() = true
 
 # testing cache:
@@ -113,6 +115,10 @@ for i in 1:2
         println(link.name)
         tf = get_transform(mech, link)
         @test translation(tf) ≈ pose_gtruth[1:3]
+        tmp = RotZYX(rotation(tf))
+        rpy = [tmp.theta3, tmp.theta2, tmp.theta1]
+        ypr = [rpy[3], rpy[2], rpy[1]] # because ypr in test data
+        @test ypr ≈ pose_gtruth[4:6]
     end
 end
 
