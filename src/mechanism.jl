@@ -161,6 +161,14 @@ end
 @inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (set_joint_angle(m, joint.id, angle))
 @inbounds set_joint_angle(m::Mechanism, joint_id::Int, angle) = (m.angles[joint_id] = angle; invalidate_cache!(m))
 
+function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
+    n_dof = length(joints)
+    @debugassert length(angle_vector) == n_dof
+    for i in 1:n_dof
+        angle_vector[i] = m.angles[joints[i].id]
+    end
+end
+
 function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
     for (joint, a) in zip(joints, angles)
         m.angles[joint.id] = a

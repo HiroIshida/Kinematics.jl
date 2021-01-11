@@ -48,6 +48,9 @@ function bench_jacobian(mech, links, joints)
 end
 @time bench_jacobian(mech, links, joints)
 
+const SVector3f = SVector{3, Float64}
+@time point_inverse_kinematics(mech, find_link(mech, "l_gripper_finger_link"), joints, SVector3f(0.6, 0.3, 0.8))
+
 using MeshCat
 using GeometryBasics
 using CoordinateTransformations

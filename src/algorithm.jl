@@ -76,9 +76,26 @@ function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
     end
 end
 
-function get_jacobian(m::Mechanism, link::Link, joints::Vector{J}, with_rot::Bool) where J<:Joint
+function get_jacobian(m::Mechanism, link::Link, joints::Vector{Joint}, with_rot::Bool)
     rows = (with_rot ? 6 : 3)
     jacobian = zeros(Float64, rows, length(joints))
     get_jacobian!(m, link, joints, with_rot, jacobian)
     return jacobian
+end
+
+function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
+    n_dof = length(joints)
+    jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
+    angles = zero(SizedVector{n_dof, Float64})
+    get_joint_angles!(m, joints, angles)
+    for i in 1:50
+        set_joint_angles(m, joints, angles)
+        point_now = translation(get_transform(m, link))
+        get_jacobian!(m, link, joints, false, jac)
+        sr_weight = 1.0
+        jac_sharp = transpose(jac)*inv(jac * transpose(jac) .+ sr_weight)
+        point_diff = point_desired - point_now
+        angles += jac_sharp * point_diff
+    end
+    return angles
 end
