@@ -52,10 +52,10 @@ using MeshCat
 using GeometryBasics
 using CoordinateTransformations
 
+set_joint_angles(mech, joints, [0.3 for _ in 1:8])
+
 vis = Visualizer()
 add_mechanism(vis, mech)
-set_joint_angle(mech, find_joint(mech, "upperarm_roll_joint"), 0.4)
-invalidate_cache!(mech)
 
 tf_roll = get_transform(mech, find_link(mech, "upperarm_roll_link"))
 tf_elbow = get_transform(mech, find_link(mech, "l_gripper_finger_link"))
