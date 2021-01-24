@@ -14,6 +14,12 @@ function invalidate!(cv::CacheVector)
     nothing
 end
 
+function extend(cv::CacheVector{T}) where T
+    push!(cv.data, zero(T))
+    push!(cv.iscached_vec, false)
+    nothing
+end
+
 @inline function set_cache!(cv::CacheVector{T}, idx, elem::T) where T
     @debugassert cv.iscached_vec[idx] == false
     @inbounds cv.data[idx] = elem
