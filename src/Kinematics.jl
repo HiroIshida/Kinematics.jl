@@ -44,7 +44,7 @@ export Mechanism, Transform, parent_link, child_link, child_links, parent_joint,
 export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
 
 # from visual.jl
-export add_mechanism, update, add_frame
+export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere
 
 #from collision.jl
 export collision_trimesh, compute_swept_sphere

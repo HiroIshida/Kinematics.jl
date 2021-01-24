@@ -54,15 +54,28 @@ end
 
 const SVector3f = SVector{3, Float64}
 angles_solved = point_inverse_kinematics(mech, find_link(mech, "l_gripper_finger_link"), joints, SVector3f(0.6, 0.3, 1.0))
+set_joint_angles(mech, joints, angles_solved)
+
+link_attach = find_link(mech, "torso_lift_link")
+centers, radius = compute_swept_sphere(link_attach)
+for i in 1:size(centers)[2]
+    center = centers[:, i]
+    name = string(randn())
+    add_new_link(mech, link_attach, name, center)
+end
 
 using MeshCat
 using GeometryBasics
 using CoordinateTransformations
 
-set_joint_angles(mech, joints, angles_solved)
-
 vis = Visualizer()
 add_mechanism(vis, mech)
+setobject!(vis[:hoge], create_vis_sphere(radius))
+settransform!(vis[:hoge], to_affine_map(get_transform(mech, mech.links[end])))
+setobject!(vis[:fuga], create_vis_sphere(radius))
+settransform!(vis[:fuga], to_affine_map(get_transform(mech, mech.links[end-1])))
+setobject!(vis[:hage], create_vis_sphere(radius))
+settransform!(vis[:hage], to_affine_map(get_transform(mech, mech.links[end-2])))
 
 tf_roll = get_transform(mech, find_link(mech, "upperarm_roll_link"))
 tf_elbow = get_transform(mech, find_link(mech, "l_gripper_finger_link"))

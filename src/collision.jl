@@ -15,7 +15,8 @@ function compute_swept_sphere(link::Link)
     isnothing(trimesh) && (return Matrix{Float64}(undef, 3, 0), 0.0)
 
     centers_, radius_ = __skrobot__.planner.swept_sphere.compute_swept_sphere(trimesh)
-    centers = Matrix{Float64}(centers_)
+    centers = Matrix{Float64}(transpose(centers_))
     radius = Float64(radius_[])
     return centers, radius
 end
+

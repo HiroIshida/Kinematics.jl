@@ -211,7 +211,7 @@ function add_new_link(m::Mechanism, parent::Link, name, position)
     pose = Transform(SVector3f(position))
 
     new_fixed_joint = Joint(joint_name, joint_id, plink_id, clink_id, pose, Fixed())
-    new_link = Link(name, hlink_id, joint_id, [], parent.id, [], nothing)
+    new_link = Link(name, hlink_id, joint_id, [], parent.id, [], nothing, Dict())
 
     push!(m.links, new_link)
     push!(m.joints, new_fixed_joint)
@@ -222,6 +222,7 @@ function add_new_link(m::Mechanism, parent::Link, name, position)
     extend!(m.axis_cache)
     m.rptable = create_rptable(m.links, m.joints)
     push!(m.angles, 0.0)
+    invalidate_cache!(m)
     # TODO maybe tf_stack and link_id_stack should be updated
 end
 #

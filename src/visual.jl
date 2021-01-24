@@ -3,6 +3,8 @@ to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 create_vis_object(md::BoxMetaData) = (Rect(Vec(0, 0, 0.), Vec(md.extents...)))
 create_vis_object(md::MeshMetaData) = (MeshFileGeometry(md.file_path))
 
+create_vis_sphere(radius) = (HyperSphere(Point(0, 0, 0.), radius))
+
 function update(vis::Visualizer, mech::Mechanism)
     for link in mech.links
         update(vis, mech, link)
