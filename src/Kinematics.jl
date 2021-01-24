@@ -2,6 +2,7 @@ module Kinematics
 
 using PyCall
 const __skrobot__ = PyCall.PyNULL()
+const __trimesh__ = PyCall.PyNULL()
 
 using Rotations
 using StaticArrays
@@ -31,6 +32,7 @@ include("mechanism.jl")
 include("load_urdf.jl")
 include("algorithm.jl")
 include("visual.jl")
+include("collision.jl")
 
 export Transform, rotation, translation
 export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache, extend!
@@ -44,11 +46,15 @@ export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
 # from visual.jl
 export add_mechanism, update, add_frame
 
+#from collision.jl
+export collision_trimesh, compute_swept_sphere
+
 export __skrobot__
 
 
 function __init__()
     copy!(__skrobot__, pyimport("skrobot"))
+    copy!(__trimesh__, pyimport("trimesh"))
 end
 
 end

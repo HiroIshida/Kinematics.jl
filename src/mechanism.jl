@@ -28,8 +28,9 @@ struct Link
     plink_id::Int
     clink_ids::Vector{Int}
     geometric_meta_data::Union{GeometricMetaData, Nothing}
+    data::Dict
 end
-Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data)
+Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
