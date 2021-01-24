@@ -93,6 +93,10 @@ function Base.one(::Type{FloatingAxis})
     FloatingAxis([0, 0, 0], [1, 0, 0])
 end
 
+function Base.zero(::Type{FloatingAxis})
+    FloatingAxis([0, 0, 0], [1, 0, 0])
+end
+
 function create_rptable(links::Vector{Link}, joints::Vector{Joint})
     n_link = length(links)
     n_joint = length(joints)
@@ -196,6 +200,30 @@ function set_joint_angles(m::Mechanism, joint_ids::Vector{Int}, angles)
     invalidate_cache!(m)
 end
 
+function add_new_link(m::Mechanism, parent::Link, name, position)
+    hlink_id = length(m.links) + 1
+
+    joint_name = name * "_joint"
+    joint_id = length(m.joints) + 1
+    plink_id = parent.id
+    clink_id = hlink_id
+    pose = Transform(SVector3f(position))
+
+    new_fixed_joint = Joint(joint_name, joint_id, plink_id, clink_id, pose, Fixed())
+    new_link = Link(name, hlink_id, joint_id, [], parent.id, [], nothing)
+
+    push!(m.links, new_link)
+    push!(m.joints, new_fixed_joint)
+    m.linkid_map[new_link.name] =  new_link.id
+    m.jointid_map[new_fixed_joint.name] = new_fixed_joint.id
+
+    extend!(m.tf_cache)
+    extend!(m.axis_cache)
+    m.rptable = create_rptable(m.links, m.joints)
+    push!(m.angles, 0.0)
+    # TODO maybe tf_stack and link_id_stack should be updated
+end
+#
 # forwarding cache methods
 @inline invalidate_cache!(m::Mechanism) = (invalidate!(m.tf_cache); invalidate!(m.axis_cache))
 @inline set_cache!(m::Mechanism, link::Link, tf) = set_cache!(m.tf_cache, link.id, tf)

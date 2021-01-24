@@ -14,7 +14,7 @@ function invalidate!(cv::CacheVector)
     nothing
 end
 
-function extend(cv::CacheVector{T}) where T
+function extend!(cv::CacheVector{T}) where T
     push!(cv.data, zero(T))
     push!(cv.iscached_vec, false)
     nothing

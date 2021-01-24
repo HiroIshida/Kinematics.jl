@@ -11,6 +11,10 @@ mech = parse_urdf(urdf_path)
 link_names = ["l_gripper_finger_link", "r_gripper_finger_link", "wrist_flex_link", "wrist_roll_link", "shoulder_lift_link", "upperarm_roll_link"];
 links = [find_link(mech, name) for name in link_names]
 
+
+add_new_link(mech, links[1], "mylink", [0.2, 0, 0])
+
+
 function bench(mech, links)
     for i in 1:100000
         invalidate_cache!(mech)
@@ -62,6 +66,8 @@ add_mechanism(vis, mech)
 
 tf_roll = get_transform(mech, find_link(mech, "upperarm_roll_link"))
 tf_elbow = get_transform(mech, find_link(mech, "l_gripper_finger_link"))
+tf_mylink = get_transform(mech, find_link(mech, "mylink"))
 add_frame(vis[:finger], tf_elbow)
 add_frame(vis[:roll], tf_roll)
+add_frame(vis[:mylink], tf_mylink)
 open(vis)
