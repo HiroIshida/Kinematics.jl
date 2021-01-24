@@ -49,13 +49,13 @@ end
 @time bench_jacobian(mech, links, joints)
 
 const SVector3f = SVector{3, Float64}
-@time point_inverse_kinematics(mech, find_link(mech, "l_gripper_finger_link"), joints, SVector3f(0.6, 0.3, 0.8))
+angles_solved = point_inverse_kinematics(mech, find_link(mech, "l_gripper_finger_link"), joints, SVector3f(0.6, 0.3, 1.0))
 
 using MeshCat
 using GeometryBasics
 using CoordinateTransformations
 
-set_joint_angles(mech, joints, [0.3 for _ in 1:8])
+set_joint_angles(mech, joints, angles_solved)
 
 vis = Visualizer()
 add_mechanism(vis, mech)

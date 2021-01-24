@@ -83,7 +83,7 @@ function get_jacobian(m::Mechanism, link::Link, joints::Vector{Joint}, with_rot:
     return jacobian
 end
 
-function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
+function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
     n_dof = length(joints)
     jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
     angles = zero(SizedVector{n_dof, Float64})
@@ -98,4 +98,31 @@ function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint
         angles += jac_sharp * point_diff
     end
     return angles
+end
+
+function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
+    n_dof = length(joints)
+    jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
+
+    function f_objective(angles::Vector, grad::Vector)
+        set_joint_angles(m, joints, angles)
+        point_now = translation(get_transform(m, link))
+        point_diff = point_desired - point_now
+
+        get_jacobian!(m, link, joints, false, jac)
+        grad_ = - 2 * transpose(jac) * point_diff
+        if length(grad) > 0
+            for i in 1:n_dof
+                grad[i] = grad_[i]
+            end
+        end
+        return sum(point_diff.^2)
+    end
+
+    angles_current = get_joint_angles(m, joints)
+    opt = Opt(:LD_SLSQP, n_dof)
+    opt.min_objective = f_objective
+    opt.ftol_abs = 1e-3
+    minf, minx, ret = optimize(opt, angles_current)
+    return minx
 end

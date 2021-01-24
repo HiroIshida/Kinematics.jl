@@ -169,6 +169,13 @@ function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
     end
 end
 
+function get_joint_angles(m::Mechanism, joints::Vector{Joint})
+    n_dof = length(joints)
+    angle_vector = zeros(n_dof)
+    get_joint_angles!(m, joints, angle_vector)
+    return angle_vector
+end
+
 function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
     for (joint, a) in zip(joints, angles)
         m.angles[joint.id] = a
