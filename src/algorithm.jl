@@ -100,7 +100,7 @@ function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vec
     return angles
 end
 
-function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
+function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f; ftol=1e-3)
     n_dof = length(joints)
     jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
 
@@ -122,7 +122,11 @@ function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint
     angles_current = get_joint_angles(m, joints)
     opt = Opt(:LD_SLSQP, n_dof)
     opt.min_objective = f_objective
-    opt.ftol_abs = 1e-3
+    joint_lower_limits = [lower_limit(j) for j in joints]
+    joint_upper_limits = [upper_limit(j) for j in joints]
+    opt.lower_bounds = joint_lower_limits
+    opt.upper_bounds = joint_upper_limits
+    opt.ftol_abs = ftol
     minf, minx, ret = optimize(opt, angles_current)
     return minx
 end

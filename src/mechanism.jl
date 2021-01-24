@@ -45,10 +45,14 @@ for MovableJointType in (:Revolute, :Prismatic)
 
         $MovableJointType(axis, lower_limit, upper_limit) = ($MovableJointType(SVector3f(axis), lower_limit, upper_limit))
 
-        $MovableJointType(axis) = (Revolute(SVector3f(axis), -Inf, Inf))
+        $MovableJointType(axis) = ($MovableJointType(SVector3f(axis), -Inf, Inf))
+        lower_limit(jt::$MovableJointType) = jt.lower_limit
+        upper_limit(jt::$MovableJointType) = jt.upper_limit
     end
 end
 struct Fixed<:JointType end
+lower_limit(jt::Fixed) = -Inf
+upper_limit(jt::Fixed) = Inf
 
 struct Joint{JT<:JointType}
     name::String
@@ -63,6 +67,8 @@ function Joint(name, id, plink_id, clink_id, transform, jt::JT) where {JT<:Joint
     pose = Transform(transform)
     Joint{JT}(name, id, plink_id, clink_id, pose, jt)
 end
+lower_limit(joint::Joint) = lower_limit(joint.jt)
+upper_limit(joint::Joint) = upper_limit(joint.jt)
 
 @inline function joint_transform(joint::Joint{Fixed}, angle)
     return joint.pose # is plink_to_hlink
