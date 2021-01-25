@@ -57,12 +57,9 @@ angles_solved = point_inverse_kinematics(mech, find_link(mech, "l_gripper_finger
 set_joint_angles(mech, joints, angles_solved)
 
 link_attach = find_link(mech, "torso_lift_link")
-centers, radius = compute_swept_sphere(link_attach)
-for i in 1:size(centers)[2]
-    center = centers[:, i]
-    name = string(randn())
-    add_new_link(mech, link_attach, name, center)
-end
+ssm = SweptSphereManager()
+add_collision_link(ssm, mech, link_attach)
+
 
 using MeshCat
 using GeometryBasics
@@ -70,12 +67,7 @@ using CoordinateTransformations
 
 vis = Visualizer()
 add_mechanism(vis, mech)
-setobject!(vis[:hoge], create_vis_sphere(radius))
-settransform!(vis[:hoge], to_affine_map(get_transform(mech, mech.links[end])))
-setobject!(vis[:fuga], create_vis_sphere(radius))
-settransform!(vis[:fuga], to_affine_map(get_transform(mech, mech.links[end-1])))
-setobject!(vis[:hage], create_vis_sphere(radius))
-settransform!(vis[:hage], to_affine_map(get_transform(mech, mech.links[end-2])))
+add_collision_spheres(vis, ssm, mech)
 
 tf_roll = get_transform(mech, find_link(mech, "upperarm_roll_link"))
 tf_elbow = get_transform(mech, find_link(mech, "l_gripper_finger_link"))

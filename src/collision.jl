@@ -29,17 +29,26 @@ function compute_swept_sphere(link::Link)
 end
 
 struct SweptSphereManager
-    coll_link_list::Vector{Link}
+    sphere_link_list::Vector{Link}
     coll_radius_list::Vector{Float64}
 end
 SweptSphereManager() = SweptSphereManager(Vector{Link}(undef, 0), Vector{Float64}(undef, 0))
 
 function add_collision_link(ssm::SweptSphereManager, mech::Mechanism, coll_link::Link)
-    link_name = "sphere_" * string(UUIDs.uuid1())
     center_list, radius_list = compute_swept_sphere(coll_link)
     for (c, r) in zip(center_list, radius_list)
+        link_name = "sphere_" * string(UUIDs.uuid1())
         add_new_link(mech, coll_link, link_name, c)
-        push!(ssm.coll_link_list, find_link(mech, link_name))
+        push!(ssm.sphere_link_list, find_link(mech, link_name))
         push!(ssm.coll_radius_list, r)
+    end
+end
+
+function add_collision_spheres(vis::Visualizer, ssm::SweptSphereManager, mech::Mechanism)
+    for (sphere, radius) in zip(ssm.sphere_link_list, ssm.coll_radius_list)
+        vis_sphere = create_vis_sphere(radius)
+        println(sphere.name)
+        setobject!(vis[:ssm][sphere.name], vis_sphere)
+        settransform!(vis[:ssm][sphere.name], to_affine_map(get_transform(mech, sphere)))
     end
 end

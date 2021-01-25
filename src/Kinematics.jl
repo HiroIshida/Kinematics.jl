@@ -47,7 +47,7 @@ export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
 export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere
 
 #from collision.jl
-export collision_trimesh, compute_swept_sphere, add_collision_link, SweptSphereManager
+export collision_trimesh, compute_swept_sphere, add_collision_link, SweptSphereManager, add_collision_spheres
 
 export __skrobot__
 
