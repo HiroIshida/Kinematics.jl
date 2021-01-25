@@ -1,3 +1,5 @@
+using UUIDs
+
 function collision_trimesh(l::Link)
     if !haskey(l.data, "trimesh")
         if typeof(l.geometric_meta_data) == MeshMetaData
@@ -15,8 +17,29 @@ function compute_swept_sphere(link::Link)
     isnothing(trimesh) && (return Matrix{Float64}(undef, 3, 0), 0.0)
 
     centers_, radius_ = __skrobot__.planner.swept_sphere.compute_swept_sphere(trimesh)
-    centers = Matrix{Float64}(transpose(centers_))
-    radius = Float64(radius_[])
-    return centers, radius
+    n_sphere = size(centers_)[1]
+
+    center_list = Vector{SVector3f}(undef, n_sphere)
+    radius_list = Vector{Float64}(undef, n_sphere)
+    for i in 1:n_sphere
+        center_list[i] = SVector3f(centers_[i, :])
+        radius_list[i] = radius_[]
+    end
+    return center_list, radius_list
 end
 
+struct SweptSphereManager
+    coll_link_list::Vector{Link}
+    coll_radius_list::Vector{Float64}
+end
+SweptSphereManager() = SweptSphereManager(Vector{Link}(undef, 0), Vector{Float64}(undef, 0))
+
+function add_collision_link(ssm::SweptSphereManager, mech::Mechanism, coll_link::Link)
+    link_name = "sphere_" * string(UUIDs.uuid1())
+    center_list, radius_list = compute_swept_sphere(coll_link)
+    for (c, r) in zip(center_list, radius_list)
+        add_new_link(mech, coll_link, link_name, c)
+        push!(ssm.coll_link_list, find_link(mech, link_name))
+        push!(ssm.coll_radius_list, r)
+    end
+end
