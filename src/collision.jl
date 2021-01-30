@@ -28,27 +28,28 @@ function compute_swept_sphere(link::Link)
     return center_list, radius_list
 end
 
-struct SweptSphereManager
-    sphere_link_list::Vector{Link}
-    coll_radius_list::Vector{Float64}
+struct SweptSphereCollisionChecker
+    mech::Mechanism
+    sphere_links::Vector{Link}
+    sphere_radii::Vector{Float64}
 end
-SweptSphereManager() = SweptSphereManager(Vector{Link}(undef, 0), Vector{Float64}(undef, 0))
+SweptSphereCollisionChecker(mech::Mechanism) = SweptSphereCollisionChecker(mech, Vector{Link}(undef, 0), Vector{Float64}(undef, 0))
 
-function add_collision_link(ssm::SweptSphereManager, mech::Mechanism, coll_link::Link)
+function add_coll_links(sscc::SweptSphereCollisionChecker, coll_link::Link)
     center_list, radius_list = compute_swept_sphere(coll_link)
     for (c, r) in zip(center_list, radius_list)
         link_name = "sphere_" * string(UUIDs.uuid1())
-        add_new_link(mech, coll_link, link_name, c)
-        push!(ssm.sphere_link_list, find_link(mech, link_name))
-        push!(ssm.coll_radius_list, r)
+        add_new_link(sscc.mech, coll_link, link_name, c)
+        push!(sscc.sphere_links, find_link(sscc.mech, link_name))
+        push!(sscc.sphere_radii, r)
     end
 end
 
-function add_collision_spheres(vis::Visualizer, ssm::SweptSphereManager, mech::Mechanism)
-    for (sphere, radius) in zip(ssm.sphere_link_list, ssm.coll_radius_list)
+function add_coll_sphers_to_vis(vis::Visualizer, sscc::SweptSphereCollisionChecker)
+    for (sphere, radius) in zip(sscc.sphere_links, sscc.sphere_radii)
         vis_sphere = create_vis_sphere(radius)
         println(sphere.name)
-        setobject!(vis[:ssm][sphere.name], vis_sphere, yellow_material())
-        settransform!(vis[:ssm][sphere.name], to_affine_map(get_transform(mech, sphere)))
+        setobject!(vis[:sscc][sphere.name], vis_sphere, yellow_material())
+        settransform!(vis[:sscc][sphere.name], to_affine_map(get_transform(sscc.mech, sphere)))
     end
 end
