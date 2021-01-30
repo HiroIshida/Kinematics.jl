@@ -48,7 +48,7 @@ function add_collision_spheres(vis::Visualizer, ssm::SweptSphereManager, mech::M
     for (sphere, radius) in zip(ssm.sphere_link_list, ssm.coll_radius_list)
         vis_sphere = create_vis_sphere(radius)
         println(sphere.name)
-        setobject!(vis[:ssm][sphere.name], vis_sphere)
+        setobject!(vis[:ssm][sphere.name], vis_sphere, yellow_material())
         settransform!(vis[:ssm][sphere.name], to_affine_map(get_transform(mech, sphere)))
     end
 end

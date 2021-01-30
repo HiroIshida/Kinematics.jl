@@ -42,8 +42,9 @@ function rgb_material(rgb::AbstractArray)
     return material
 end
 red_material() = rgb_material([1, 0, 0])
-blue_material() = rgb_material([0, 1, 0])
-green_material() = rgb_material([0, 0, 1])
+green_material() = rgb_material([0, 1, 0])
+blue_material() = rgb_material([0, 0., 1.])
+yellow_material() = rgb_material([1., 1., 0.])
 
 function add_frame(vis::Visualizer, tf_world_to_here::Transform; length=0.2)
     avis1 = ArrowVisualizer(vis[:xaxis])
