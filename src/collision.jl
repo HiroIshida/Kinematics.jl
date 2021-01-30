@@ -53,3 +53,9 @@ function add_coll_sphers_to_vis(vis::Visualizer, sscc::SweptSphereCollisionCheck
         settransform!(vis[:sscc][sphere.name], to_affine_map(get_transform(sscc.mech, sphere)))
     end
 end
+
+"""
+function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction)
+    set_joint_angles(sscc.mech, joints, angles)
+end
+"""

@@ -30,6 +30,9 @@ end
     Transform(mat)
 end
 
+@inline function Base.:*(tf::Transform, point::SVector3f)
+    return translation(tf) + point
+end
 @inline rotation(t::Transform) = @inbounds return RotMatrix(t.mat[1], t.mat[2], t.mat[3], t.mat[5], t.mat[6], t.mat[7], t.mat[9], t.mat[10], t.mat[11])
 @inline translation(t::Transform) = @inbounds return SVector(t.mat[13], t.mat[14], t.mat[15])
 
@@ -37,7 +40,15 @@ end
     Transform(one(SMatrix{4, 4, Float64}))
 end
 
+@inline function Base.one(::Type{Transform})
+    Transform(one(SMatrix{4, 4, Float64}))
+end
+
 function (*)(tf12::Transform, tf23::Transform)
     return Transform(tf12.mat * tf23.mat)
 end
 
+function LinearAlgebra.inv(tf::Transform)
+    rotinv = inv(rotation(tf))
+    Transform(- rotinv * translation(tf), rotinv)
+end
