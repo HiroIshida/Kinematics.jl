@@ -93,6 +93,11 @@ base_link = find_link(mech, "base_link")
 @test is_relevant(mech, shoulder_joint, wrist_link)
 @test !is_relevant(mech, shoulder_joint, base_link)
 
+# rptable test fetch with custom link
+new_link = add_new_link(mech, wrist_link, "mylink", [0, 0, 0])
+@test is_relevant(mech, find_joint(mech, "torso_lift_joint"), new_link)
+
+
 # kinematics test (testing get_transform)
 import JSON
 f = open("../data/ground_truth.json", "r")
