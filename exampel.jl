@@ -60,12 +60,18 @@ link_attach = find_link(mech, "torso_lift_link")
 sscc = SweptSphereCollisionChecker(mech)
 add_coll_links(sscc, link_attach)
 
+pose = Transform(SVector3f(1., 0., 0.8))
+width = SVector3f(0.3, 0.3, 0.3)
+boxsdf = BoxSDF(pose, width)
+vals = compute_coll_dists(sscc, joints, angles_solved, boxsdf)
+println(vals)
 
 using MeshCat
 using GeometryBasics
 using CoordinateTransformations
 
 vis = Visualizer()
+add_sdf(vis, boxsdf)
 add_mechanism(vis, mech)
 add_coll_sphers_to_vis(vis, sscc)
 
