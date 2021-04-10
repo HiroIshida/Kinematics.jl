@@ -203,6 +203,7 @@ end
 
 function add_new_link(m::Mechanism, parent::Link, name, position)
     hlink_id = length(m.links) + 1
+    push!(parent.clink_ids, hlink_id)
 
     joint_name = name * "_joint"
     joint_id = length(m.joints) + 1
@@ -224,6 +225,7 @@ function add_new_link(m::Mechanism, parent::Link, name, position)
     push!(m.angles, 0.0)
     invalidate_cache!(m)
     # TODO maybe tf_stack and link_id_stack should be updated
+    return new_link
 end
 #
 # forwarding cache methods
