@@ -54,8 +54,8 @@ function add_coll_sphers_to_vis(vis::Visualizer, sscc::SweptSphereCollisionCheck
     end
 end
 
-function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction, out_vals::Vector{Float64})
-    set_joint_angles(sscc.mech, joints, angles)
+function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction, 
+        out_vals::AbstractArray{Float64, 1})
     for i in 1:length(sscc.sphere_links)
         link = sscc.sphere_links[i]
         pt = translation(get_transform(sscc.mech, link))
@@ -63,9 +63,41 @@ function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{J
     end
 end
 
-function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction)
+function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction)
     n_feature = length(sscc.sphere_links)
     out_vals = Vector{Float64}(undef, n_feature)
-    compute_coll_dists!(sscc, joints, angles, sdf, out_vals)
+    compute_coll_dists!(sscc, joints, sdf, out_vals)
     return out_vals
+end
+
+function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction, 
+        out_vals::AbstractArray{Float64, 1}, out_grads::AbstractArray{Float64, 2}
+       )
+    n_col = length(sscc.sphere_links)
+    eps = 1e-7
+    grad = MVector{3, Float64}(undef)
+    pt1 = MVector{3, Float64}(undef)
+    jac = zeros(3, length(joints))
+
+    for i in 1:n_col
+        link = sscc.sphere_links[i]
+        pt0 = translation(get_transform(sscc.mech, link))
+        out_vals[i] = sdf(pt0)
+
+        for j in 1:3
+            copy!(pt1, pt0)
+            pt1[j] += eps
+            grad[j] = (sdf(pt1) - out_vals[i])/eps
+        end
+        get_jacobian!(sscc.mech, link, joints, false, jac)
+        out_grads[:, i] = transpose(grad) * jac
+    end
+end
+
+function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction) 
+    n_feature = length(sscc.sphere_links)
+    out_vals = Vector{Float64}(undef, n_feature)
+    out_grads = Array{Float64}(undef, length(joints), n_feature)
+    compute_coll_dists_and_grads!(sscc, joints, sdf, out_vals, out_grads)
+    return out_vals, out_grads
 end

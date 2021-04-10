@@ -151,3 +151,5 @@ for angles in [angles1, angles2]
     end
 end
 
+
+include("test_collision.jl")

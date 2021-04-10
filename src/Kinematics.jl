@@ -48,13 +48,13 @@ export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
 export BoxSDF
 
 #from collision.jl
-export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add_coll_links, add_coll_sphers_to_vis, compute_coll_dists, compute_coll_dists!
+export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add_coll_links, add_coll_sphers_to_vis, compute_coll_dists, compute_coll_dists!, compute_coll_dists_and_grads!, compute_coll_dists_and_grads
 
 # from visual.jl
 export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_sdf
 
 
-
+# other stuff
 export __skrobot__
 
 
