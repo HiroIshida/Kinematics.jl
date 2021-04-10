@@ -21,6 +21,11 @@ function update(vis::Visualizer, mech::Mechanism, link::Link)
     settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
 end
 
+function add_sdf(vis::Visualizer, boxsdf::BoxSDF)
+    setobject!(vis[:sdf], Rect(Vec(0, 0, 0.), Vec(boxsdf.width)))
+    settransform!(vis[:sdf], to_affine_map(boxsdf.pose))
+end
+
 function add_mechanism(vis::Visualizer, mech::Mechanism)
     for link in mech.links
         add_link(vis, link)
