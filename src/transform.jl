@@ -30,7 +30,7 @@ end
     Transform(mat)
 end
 
-@inline function Base.:*(tf::Transform, point::SVector3f)
+@inline function Base.:*(tf::Transform, point::StaticVector{3, T}) where T<:AbstractFloat
     return translation(tf) + point
 end
 @inline rotation(t::Transform) = @inbounds return RotMatrix(t.mat[1], t.mat[2], t.mat[3], t.mat[5], t.mat[6], t.mat[7], t.mat[9], t.mat[10], t.mat[11])

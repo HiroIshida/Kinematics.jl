@@ -12,7 +12,7 @@ function BoxSDF(width::SVector3f)
     BoxSDF(one(Transform), one(Transform), width)
 end
 
-function (sdf::BoxSDF)(p::SVector3f)
+function (sdf::BoxSDF)(p::StaticVector{3, T}) where T <: AbstractFloat
     half_extent = 0.5 * sdf.width
     p_sdfframe = sdf.inv_pose * p
     q = abs.(p_sdfframe) - half_extent
