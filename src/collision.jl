@@ -54,8 +54,18 @@ function add_coll_sphers_to_vis(vis::Visualizer, sscc::SweptSphereCollisionCheck
     end
 end
 
-"""
-function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction)
+function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction, out_vals::Vector{Float64})
     set_joint_angles(sscc.mech, joints, angles)
+    for i in 1:length(sscc.sphere_links)
+        link = sscc.sphere_links[i]
+        pt = translation(get_transform(sscc.mech, link))
+        out_vals[i] = sdf(pt)
+    end
 end
-"""
+
+function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, angles::Vector{Float64}, sdf::SignedDistanceFunction)
+    n_feature = length(sscc.sphere_links)
+    out_vals = Vector{Float64}(undef, n_feature)
+    compute_coll_dists!(sscc, joints, angles, sdf, out_vals)
+    return out_vals
+end

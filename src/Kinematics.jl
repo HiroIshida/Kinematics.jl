@@ -31,8 +31,8 @@ include("transform.jl")
 include("mechanism.jl")
 include("load_urdf.jl")
 include("algorithm.jl")
-include("visual.jl")
 include("sdf.jl")
+include("visual.jl")
 include("collision.jl")
 
 export Transform, rotation, translation
@@ -44,14 +44,15 @@ export Mechanism, Transform, parent_link, child_link, child_links, parent_joint,
 # from algorithm.jl
 export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
 
-# from visual.jl
-export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere
-
 #from sdf.jl
 export BoxSDF
 
 #from collision.jl
-export collision_trimesh, compute_swept_sphere, add_coll_links, add_coll_sphers_to_vis
+export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add_coll_links, add_coll_sphers_to_vis, compute_coll_dists, compute_coll_dists!
+
+# from visual.jl
+export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_sdf
+
 
 
 export __skrobot__
