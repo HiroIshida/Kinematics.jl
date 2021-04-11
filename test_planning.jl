@@ -1,12 +1,13 @@
 using Revise
 using Kinematics
 using StaticArrays
+using BenchmarkTools
+using Profile
 
 urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
 mech = parse_urdf(urdf_path)
 
 using MeshCat
-vis = Visualizer()
 
 joint_names = [
         "torso_lift_joint",
@@ -28,22 +29,25 @@ add_coll_links(sscc, find_link(mech, "elbow_flex_link"))
 pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.7))
 width = Kinematics.SVector3f(0.15, 0.15, 0.5)
 boxsdf = BoxSDF(pose, width)
-add_sdf(vis, boxsdf)
-add_mechanism(vis, mech)
-open(vis)
 
-n_wp = 10
+n_wp = 30
 q_start = get_joint_angles(mech, joints)
 
 link = find_link(mech, "gripper_link")
 q_goal = point_inverse_kinematics(mech, link, joints, SVector{3, Float64}(0.3, -0.4, 1.2))
 set_joint_angles(mech, joints, q_goal)
-update(vis, mech)
 
 
 xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-using BenchmarkTools
+q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+using ProfileView
+
+q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 @btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+vis = Visualizer()
+add_sdf(vis, boxsdf)
+add_mechanism(vis, mech)
+open(vis)
 for i in 1:n_wp
     sleep(0.6)
     set_joint_angles(mech, joints, q_seq[:, i])
