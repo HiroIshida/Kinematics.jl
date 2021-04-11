@@ -111,11 +111,7 @@ function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint
 
         get_jacobian!(m, link, joints, false, jac)
         grad_ = - 2 * transpose(jac) * point_diff
-        if length(grad) > 0
-            for i in 1:n_dof
-                grad[i] = grad_[i]
-            end
-        end
+        length(grad) > 0 && copy!(grad, grad_)
         return sum(point_diff.^2)
     end
 
