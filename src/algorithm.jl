@@ -127,6 +127,6 @@ function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint
     opt.lower_bounds = joint_lower_limits
     opt.upper_bounds = joint_upper_limits
     opt.ftol_abs = ftol
-    minf, minx, ret = optimize(opt, angles_current)
+    minf, minx, ret = NLopt.optimize(opt, angles_current)
     return minx
 end
