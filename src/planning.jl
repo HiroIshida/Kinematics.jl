@@ -23,6 +23,8 @@ function plan_trajectory(
         joints::Vector{Joint},
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
+        ;
+        ftol_abs=1e-3
         )
     n_dof = length(joints)
     n_whole = n_dof * n_wp
@@ -30,10 +32,11 @@ function plan_trajectory(
     function create_objective()
         weights = ones(n_dof)
         A = cost_metric_matrix(n_wp, weights)
-        function objective(xi)
+        function objective(xi::Vector, grad::Vector) # NLOPT style
             val = transpose(xi) * A * xi
-            grad = 2 * A * xi
-            return val, grad
+            grad_ = 2 * A * xi
+            length(grad) > 0 && copy!(grad, grad_)
+            return val
         end
         return objective
     end
@@ -42,9 +45,10 @@ function plan_trajectory(
         n_coll = length(sscc.sphere_links)
 
         # declare beforehand to avoid additional allocation 
-        jac_mat = zeros(n_coll * n_wp, n_whole)
-        val_vec = zeros(n_coll * n_wp)
-        function ineqconst(xi)
+        n_ineq = n_coll * n_wp
+        jac_mat = zeros(n_ineq, n_whole)
+        val_vec = zeros(n_ineq)
+        function ineqconst(val::Vector, xi::Vector, jac::Matrix)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             for i in 1:n_wp
                 angles = xi_reshaped[:, i]
@@ -55,36 +59,44 @@ function plan_trajectory(
                 jac_mat[1+n_coll*(i-1):n_coll*i, 1+n_dof*(i-1):n_dof*i] = transpose(grads)
                 val_vec[1+n_coll*(i-1):n_coll*i] = dists
             end
-            return val_vec, jac_mat
+            length(jac) > 0 && copy!(jac, -transpose(jac_mat))
+            copy!(val, -val_vec)
         end
-        dual_variable = zeros(n_coll * n_wp)
-        return ineqconst, dual_variable
+        return ineqconst, n_ineq
     end
 
     function create_eqconst()
         # n_dof * 2 means sum of dofs of start and end points
         # the jac_mat is static, so defined offline here
-        jac_mat = zeros(n_dof * 2, n_whole) 
+        n_eq = n_dof * 2
+        jac_mat = zeros(n_eq, n_whole) 
         jac_mat[1:n_dof, 1:n_dof] = -Matrix{Float64}(I, n_dof, n_dof)
         jac_mat[n_dof+1:end, end-n_dof+1:end] = -Matrix{Float64}(I, n_dof, n_dof)
 
         val_vec = zeros(n_dof * 2)
-        function eqconst(xi)
+        function eqconst(val::Vector, xi::Vector, jac::Matrix)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             val_vec[1:n_dof] = q_start - xi_reshaped[:, 1]
             val_vec[n_dof+1:end] = q_goal - xi_reshaped[:, end]
-            return val_vec, jac_mat
+            length(jac) > 0 && copy!(jac, transpose(jac_mat))
+            copy!(val, val_vec)
         end
-        dual_variable = zeros(n_dof*2)
-        return eqconst, dual_variable
+        return eqconst, n_eq
     end
 
-    f = create_objective()
-    g, dual_ineq = create_ineqconst()
-    h, dual_eq = create_eqconst()
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
-    #return f, g, h, xi_init, dual_ineq, dual_eq
-    xi_solved = SequentialQP.optimize(xi_init, dual_ineq, dual_eq, f, g, h)
+
+    opt = Opt(:LD_SLSQP, n_whole)
+    opt.min_objective = create_objective()
+
+    g, n_ineq = create_ineqconst()
+    inequality_constraint!(opt, g, [1e-8 for _ in 1:n_ineq])
+
+    h, n_eq = create_eqconst()
+    equality_constraint!(opt, h, [1e-8 for _ in 1:n_eq])
+
+    opt.ftol_abs = ftol_abs
+    minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq
 end
