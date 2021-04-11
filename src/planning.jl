@@ -30,10 +30,11 @@ function plan_trajectory(
     function create_objective()
         weights = ones(n_dof)
         A = cost_metric_matrix(n_wp, weights)
-        function objective(xi)
+        function objective(xi::Vector, grad::Vector) # NLOPT style
             val = transpose(xi) * A * xi
-            grad = 2 * A * xi
-            return val, grad
+            grad_ = 2 * A * xi
+            length(grad) > 0 && copy!(grad, grad_)
+            return val
         end
         return objective
     end
@@ -44,7 +45,7 @@ function plan_trajectory(
         # declare beforehand to avoid additional allocation 
         jac_mat = zeros(n_coll * n_wp, n_whole)
         val_vec = zeros(n_coll * n_wp)
-        function ineqconst(xi)
+        function ineqconst(xi::Vector, jac::Matrix)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             for i in 1:n_wp
                 angles = xi_reshaped[:, i]
@@ -55,10 +56,10 @@ function plan_trajectory(
                 jac_mat[1+n_coll*(i-1):n_coll*i, 1+n_dof*(i-1):n_dof*i] = transpose(grads)
                 val_vec[1+n_coll*(i-1):n_coll*i] = dists
             end
-            return val_vec, jac_mat
+            length(jac) > 0 && copy!(jac, jac_mat)
+            return val_vec
         end
-        dual_variable = zeros(n_coll * n_wp)
-        return ineqconst, dual_variable
+        return ineqconst
     end
 
     function create_eqconst()
@@ -69,22 +70,25 @@ function plan_trajectory(
         jac_mat[n_dof+1:end, end-n_dof+1:end] = -Matrix{Float64}(I, n_dof, n_dof)
 
         val_vec = zeros(n_dof * 2)
-        function eqconst(xi)
+        function eqconst(xi::Vector, jac::Matrix)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             val_vec[1:n_dof] = q_start - xi_reshaped[:, 1]
             val_vec[n_dof+1:end] = q_goal - xi_reshaped[:, end]
-            return val_vec, jac_mat
+            length(jac) > 0 && copy!(jac, jac_mat)
+            return val_vec
         end
-        dual_variable = zeros(n_dof*2)
-        return eqconst, dual_variable
+        return eqconst
     end
 
-    f = create_objective()
-    g, dual_ineq = create_ineqconst()
-    h, dual_eq = create_eqconst()
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
-    #return f, g, h, xi_init, dual_ineq, dual_eq
-    xi_solved = SequentialQP.optimize(xi_init, dual_ineq, dual_eq, f, g, h)
+
+    opt = Opt(:LD_SLSQP, n_whole)
+    opt.min_objective = create_objective()
+    inequality_constraint!(opt, create_ineqconst())
+    equality_constraint!(opt, create_eqconst())
+    opt.ftol_abs = 1e-3
+    minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+    println(ret)
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq
 end
