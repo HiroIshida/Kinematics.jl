@@ -33,6 +33,12 @@ git-tree-sha1 = "1289b57e8cf019aede076edab0587eb9644175bd"
 uuid = "9e28174c-4ba2-5203-b857-d8d62c4213ee"
 version = "1.0.2"
 
+[[BinaryProvider]]
+deps = ["Libdl", "Logging", "SHA"]
+git-tree-sha1 = "ecdec412a9abc8db54c0efc5548c64dfce072058"
+uuid = "b99e7846-7c00-51b0-8f62-c81ae34c0232"
+version = "0.5.10"
+
 [[Blink]]
 deps = ["Base64", "BinDeps", "Distributed", "JSExpr", "JSON", "Lazy", "Logging", "MacroTools", "Mustache", "Mux", "Reexport", "Sockets", "WebIO", "WebSockets"]
 git-tree-sha1 = "434893c1f9e9ce59be3f114641e99ef84c4d8f1a"
@@ -327,6 +333,18 @@ git-tree-sha1 = "2b597c46900f5f811bec31f0dcc88b45744a2a09"
 uuid = "079eb43e-fd8e-5478-9966-2cf3e3edb778"
 version = "2.7.0+0"
 
+[[OSQP]]
+deps = ["BinaryProvider", "Libdl", "LinearAlgebra", "MathOptInterface", "MathProgBase", "OSQP_jll", "SparseArrays"]
+git-tree-sha1 = "1231412a185b8c160111bdfa0c186108e2b5c049"
+uuid = "ab2f91bb-94b4-55e3-9ba0-7f65df51de79"
+version = "0.6.1"
+
+[[OSQP_jll]]
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "ae1ca9707f7e8eb4805e83bad42af90fde780663"
+uuid = "9c4f68bf-6205-5545-a508-2878b064d984"
+version = "0.6.2+0"
+
 [[Observables]]
 git-tree-sha1 = "3469ef96607a6b9a1e89e54e6f23401073ed3126"
 uuid = "510215fc-4207-5dde-b226-833fc4488ee2"
@@ -415,6 +433,12 @@ version = "1.0.2"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"
+
+[[SequentialQP]]
+deps = ["LinearAlgebra", "OSQP", "SparseArrays"]
+path = "dev/SequentialQP"
+uuid = "f9b83008-eb4e-4146-be5f-bb702dedfeae"
+version = "0.1.0"
 
 [[Serialization]]
 uuid = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
