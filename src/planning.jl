@@ -25,6 +25,15 @@ function convertto_nlopt_const(const_canonical)
     return inner
 end
 
+function convertto_nlopt_objective(objective_canonical)
+    function inner(x::Vector, grad::Vector)
+        val, grad_ = objective_canonical(x)
+        length(grad) > 0 && copy!(grad, grad_)
+        return val
+    end
+    return inner
+end
+
 function plan_trajectory(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
@@ -39,11 +48,10 @@ function plan_trajectory(
     function create_objective()
         weights = ones(n_dof)
         A = cost_metric_matrix(n_wp, weights)
-        function objective(xi::Vector, grad::Vector) # NLOPT style
+        function objective(xi)
             val = transpose(xi) * A * xi
-            grad_ = 2 * A * xi
-            length(grad) > 0 && copy!(grad, grad_)
-            return val
+            grad = 2 * A * xi
+            return val, grad
         end
         return objective
     end
@@ -92,7 +100,8 @@ function plan_trajectory(
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
 
     opt = Opt(:LD_SLSQP, n_whole)
-    opt.min_objective = create_objective()
+    f = create_objective()
+    opt.min_objective = convertto_nlopt_objective(f)
 
     g, n_ineq = create_ineqconst()
     inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
