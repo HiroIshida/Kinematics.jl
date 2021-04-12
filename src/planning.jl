@@ -34,13 +34,11 @@ function convertto_nlopt_objective(objective_canonical)
     return inner
 end
 
-function plan_trajectory(
+function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
-        ;
-        ftol_abs=1e-3
         )
     n_dof = length(joints)
     n_whole = n_dof * n_wp
@@ -97,18 +95,30 @@ function plan_trajectory(
         return eqconst, n_eq
     end
 
+
+    f = create_objective()
+    g, n_ineq = create_ineqconst()
+    h, n_eq = create_eqconst()
+    return f, g, h, n_whole, n_ineq, n_eq
+
+end
+
+function plan_trajectory(
+        sscc::SweptSphereCollisionChecker,
+        joints::Vector{Joint},
+        sdf::SignedDistanceFunction,
+        q_start, q_goal, n_wp
+        ;
+        ftol_abs=1e-3
+        )
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
+    f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp)
+    n_dof = length(joints)
 
     opt = Opt(:LD_SLSQP, n_whole)
-    f = create_objective()
     opt.min_objective = convertto_nlopt_objective(f)
-
-    g, n_ineq = create_ineqconst()
     inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
-
-    h, n_eq = create_eqconst()
     equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
-
     opt.ftol_abs = ftol_abs
     minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
     q_seq = reshape(xi_solved, (n_dof, n_wp))
