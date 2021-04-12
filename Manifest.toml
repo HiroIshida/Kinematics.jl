@@ -41,6 +41,12 @@ git-tree-sha1 = "b25e88db7944f98789130d7b503276bc34bc098e"
 uuid = "bf4720bc-e11a-5d0c-854e-bdca1663c893"
 version = "0.1.0"
 
+[[AugLag]]
+deps = ["BenchmarkTools", "JSON", "LinearAlgebra", "Test"]
+path = "dev/AugLag"
+uuid = "00e8f567-5ab8-4b4d-b776-660e3e797dc4"
+version = "0.1.0"
+
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 

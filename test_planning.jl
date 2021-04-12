@@ -30,7 +30,7 @@ pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.7))
 width = Kinematics.SVector3f(0.15, 0.15, 0.5)
 boxsdf = BoxSDF(pose, width)
 
-n_wp = 30
+n_wp = 18
 q_start = get_joint_angles(mech, joints)
 
 link = find_link(mech, "gripper_link")
@@ -42,8 +42,9 @@ xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
 q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 using ProfileView
 
-q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
-@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:AUGLAG)
+@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:NLOPT)
+#@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 vis = Visualizer()
 add_sdf(vis, boxsdf)
 add_mechanism(vis, mech)

@@ -1,4 +1,28 @@
 using SequentialQP
+using AugLag
+
+abstract type QuadraticStyle end
+struct IsQuadratic <: QuadraticStyle end
+struct IsNotQuadratic <: QuadraticStyle end
+QuadraticStyle(::Type) = IsNotQuadratic()
+QuadraticStyle(::Type{AugLag.QuadraticModel}) = IsQuadratic()
+
+convertto_auglag_quadratic(f::T) where {T} = convertto_auglag_quadratic(QuadraticStyle(T), f)
+convertto_auglag_quadratic(::IsNotQuadratic, f) = error("attempt to convert not quadratic objective")
+convertto_auglag_quadratic(::IsQuadratic, f) = error("please implement for type", typeof(f))
+
+struct QuadraticCost
+    hessian::Matrix
+end
+function (qc::QuadraticCost)(x::Vector) 
+    hx = qc.hessian * x
+    return dot(x, hx), 2 * hx
+end
+
+function convertto_auglag_quadratic(f::QuadraticCost) 
+    dim = size(f.hessian)[1]
+    return AugLag.QuadraticModel(0.0, zeros(dim), f.hessian)
+end
 
 function cost_metric_matrix(n_wp, weights)
     # TODO levarage sparsity ?
@@ -36,6 +60,14 @@ function convertto_nlopt_objective(objective_canonical)
     return inner
 end
 
+function convertto_auglag_const(const_canonical)
+    function inner(x::Vector)
+        val, jac = const_canonical(x)
+        return val, transpose(jac)
+    end
+    return inner
+end
+
 function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
@@ -48,12 +80,7 @@ function construct_problem(
     function create_objective()
         weights = ones(n_dof)
         A = cost_metric_matrix(n_wp, weights)
-        function objective(xi)
-            val = transpose(xi) * A * xi
-            grad = 2 * A * xi
-            return val, grad
-        end
-        return objective
+        return QuadraticCost(A)
     end
 
     function create_ineqconst()
@@ -97,7 +124,6 @@ function construct_problem(
         return eqconst, n_eq
     end
 
-
     f = create_objective()
     g, n_ineq = create_ineqconst()
     h, n_eq = create_eqconst()
@@ -111,18 +137,37 @@ function plan_trajectory(
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;
-        ftol_abs=1e-3
+        ftol_abs=1e-3,
+        solver=:NLOPT
         )
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp)
     n_dof = length(joints)
 
-    opt = Opt(:LD_SLSQP, n_whole)
-    opt.min_objective = convertto_nlopt_objective(f)
-    inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
-    equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
-    opt.ftol_abs = ftol_abs
-    minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+    if solver==:NLOPT
+        opt = Opt(:LD_SLSQP, n_whole)
+        opt.min_objective = convertto_nlopt_objective(f)
+        inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
+        equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
+        opt.ftol_abs = ftol_abs
+        minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+    elseif solver==:AUGLAG
+        qm = convertto_auglag_quadratic(f)
+        prob = Problem(qm, convertto_auglag_const(h), convertto_auglag_const(g), n_whole)
+        internal_data = AugLag.gen_init_data(prob)
+        x_opt = xi_init
+        xtol = 1e-2
+
+        for i in 1:1
+            println(i)
+            x_opt_pre = x_opt
+            x_opt = step_auglag(x_opt, prob, internal_data, xtol)
+            if maximum(abs.(x_opt - x_opt_pre)) < xtol
+                break
+            end
+        end
+        xi_solved = x_opt
+    end
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq
 end
