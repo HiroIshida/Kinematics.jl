@@ -16,6 +16,15 @@ function create_straight_trajectory(q_start, q_goal, n_wp)
     return xi
 end
 
+function convertto_nlopt_const(const_canonical)
+    function inner(val::Vector, x::Vector, jac::Matrix)
+        val_, jac_ = const_canonical(x)
+        copy!(val, -val_)
+        length(jac) > 0 && copy!(jac, -transpose(jac_))
+    end
+    return inner
+end
+
 function plan_trajectory(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
@@ -46,7 +55,7 @@ function plan_trajectory(
         n_ineq = n_coll * n_wp
         jac_mat = zeros(n_ineq, n_whole)
         val_vec = zeros(n_ineq)
-        function ineqconst(val::Vector, xi::Vector, jac::Matrix)
+        function ineqconst(xi::Vector)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             for i in 1:n_wp
                 angles = xi_reshaped[:, i]
@@ -57,8 +66,7 @@ function plan_trajectory(
                 jac_mat[1+n_coll*(i-1):n_coll*i, 1+n_dof*(i-1):n_dof*i] = transpose(grads)
                 val_vec[1+n_coll*(i-1):n_coll*i] = dists
             end
-            length(jac) > 0 && copy!(jac, -transpose(jac_mat))
-            copy!(val, -val_vec)
+            return val_vec, jac_mat
         end
         return ineqconst, n_ineq
     end
@@ -72,12 +80,11 @@ function plan_trajectory(
         jac_mat[n_dof+1:end, end-n_dof+1:end] = -Matrix{Float64}(I, n_dof, n_dof)
 
         val_vec = zeros(n_dof * 2)
-        function eqconst(val::Vector, xi::Vector, jac::Matrix)
+        function eqconst(xi::Vector)
             xi_reshaped = reshape(xi, (n_dof, n_wp))
             val_vec[1:n_dof] = q_start - xi_reshaped[:, 1]
             val_vec[n_dof+1:end] = q_goal - xi_reshaped[:, end]
-            length(jac) > 0 && copy!(jac, transpose(jac_mat))
-            copy!(val, val_vec)
+            return val_vec, jac_mat
         end
         return eqconst, n_eq
     end
@@ -88,10 +95,10 @@ function plan_trajectory(
     opt.min_objective = create_objective()
 
     g, n_ineq = create_ineqconst()
-    inequality_constraint!(opt, g, [1e-8 for _ in 1:n_ineq])
+    inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
 
     h, n_eq = create_eqconst()
-    equality_constraint!(opt, h, [1e-8 for _ in 1:n_eq])
+    equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
 
     opt.ftol_abs = ftol_abs
     minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
