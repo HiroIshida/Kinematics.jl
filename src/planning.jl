@@ -1,15 +1,5 @@
 using SequentialQP
-using AugLag
-
-abstract type QuadraticStyle end
-struct IsQuadratic <: QuadraticStyle end
-struct IsNotQuadratic <: QuadraticStyle end
-QuadraticStyle(::Type) = IsNotQuadratic()
-QuadraticStyle(::Type{AugLag.QuadraticModel}) = IsQuadratic()
-
-convertto_auglag_quadratic(f::T) where {T} = convertto_auglag_quadratic(QuadraticStyle(T), f)
-convertto_auglag_quadratic(::IsNotQuadratic, f) = error("attempt to convert not quadratic objective")
-convertto_auglag_quadratic(::IsQuadratic, f) = error("please implement for type", typeof(f))
+using Aula
 
 struct QuadraticCost
     hessian::Matrix
@@ -21,7 +11,7 @@ end
 
 function convertto_auglag_quadratic(f::QuadraticCost) 
     dim = size(f.hessian)[1]
-    return AugLag.QuadraticModel(0.0, zeros(dim), f.hessian)
+    return Aula.QuadraticModel(0.0, zeros(dim), f.hessian)
 end
 
 function cost_metric_matrix(n_wp, weights)
@@ -60,7 +50,7 @@ function convertto_nlopt_objective(objective_canonical)
     return inner
 end
 
-function convertto_auglag_const(const_canonical)
+function convertto_aula_const(const_canonical)
     function inner(x::Vector)
         val, jac = const_canonical(x)
         return val, transpose(jac)
@@ -151,19 +141,22 @@ function plan_trajectory(
         equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
         opt.ftol_abs = ftol_abs
         minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
-    elseif solver==:AUGLAG # experimental
-        qm = convertto_auglag_quadratic(f)
-        prob = Problem(qm, convertto_auglag_const(h), convertto_auglag_const(g), n_whole)
-        internal_data = AugLag.gen_init_data(prob)
-        x_opt = xi_init
-        xtol = 1e-2
+    elseif solver==:AULA # experimental
+        dim = size(f.hessian)[1]
+        qm = Aula.QuadraticModel(0.0, zeros(dim), f.hessian)
+        ws = Aula.Workspace(n_dof, n_ineq, n_eq)
+        cfg = Aula.Config()
+        ineq_const = convertto_aula_const(g)
+        eq_const = convertto_aula_const(h)
+        xi = xi_init
         for i in 1:2
             println(i)
-            x_opt_pre = x_opt
-            x_opt, grad = step_auglag(x_opt, prob, internal_data, xtol)
-            println(maximum(abs.(grad)))
+            xi = single_step!(ws, xi, qm, ineq_const, eq_const, cfg)
+            shoud_abort(ws, cfg) && break
         end
-        xi_solved = x_opt
+        xi_solved = xi
+    else
+        error("unsupported solver")
     end
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq

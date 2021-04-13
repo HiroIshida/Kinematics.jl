@@ -41,9 +41,9 @@ git-tree-sha1 = "b25e88db7944f98789130d7b503276bc34bc098e"
 uuid = "bf4720bc-e11a-5d0c-854e-bdca1663c893"
 version = "0.1.0"
 
-[[AugLag]]
-deps = ["BenchmarkTools", "JSON", "LinearAlgebra", "Test"]
-path = "dev/AugLag"
+[[Aula]]
+deps = ["JSON", "LinearAlgebra", "Revise", "Test"]
+path = "dev/Aula"
 uuid = "00e8f567-5ab8-4b4d-b776-660e3e797dc4"
 version = "0.1.0"
 
@@ -96,6 +96,12 @@ version = "1.16.0+6"
 git-tree-sha1 = "9cc225870ec32ce7b9c773d4dcdaef32f622cf89"
 uuid = "7057c7e9-c182-5462-911a-8362d720325c"
 version = "0.3.4"
+
+[[CodeTracking]]
+deps = ["InteractiveUtils", "UUIDs"]
+git-tree-sha1 = "8ad457cfeb0bca98732c97958ef81000a543e73e"
+uuid = "da1fd8a2-8d9e-5ec2-8556-3022fb5608a2"
+version = "1.0.5"
 
 [[CodecBzip2]]
 deps = ["Bzip2_jll", "Libdl", "TranscodingStreams"]
@@ -415,6 +421,12 @@ git-tree-sha1 = "9aff0587d9603ea0de2c6f6300d9f9492bbefbd3"
 uuid = "aacddb02-875f-59d6-b918-886e6ef4fbf8"
 version = "2.0.1+3"
 
+[[JuliaInterpreter]]
+deps = ["CodeTracking", "InteractiveUtils", "Random", "UUIDs"]
+git-tree-sha1 = "ccc489088d6bc4b5265e043e3fbb1baad5025cf7"
+uuid = "aa1ae85d-cabe-5617-a682-6adf51b2e16a"
+version = "0.8.11"
+
 [[LAME_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
 git-tree-sha1 = "df381151e871f41ee86cee4f5f6fd598b8a68826"
@@ -512,6 +524,12 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[Logging]]
 uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
+
+[[LoweredCodeUtils]]
+deps = ["JuliaInterpreter"]
+git-tree-sha1 = "c96d6b881a3fc6fc7f36ad03f837220a8cf70c52"
+uuid = "6f1432cf-f94c-5a45-995e-cdbf5db27b0b"
+version = "1.4.0"
 
 [[METIS_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -740,6 +758,12 @@ deps = ["UUIDs"]
 git-tree-sha1 = "cfbac6c1ed70c002ec6361e7fd334f02820d6419"
 uuid = "ae029012-a4dd-5104-9daa-d747884805df"
 version = "1.1.2"
+
+[[Revise]]
+deps = ["CodeTracking", "Distributed", "FileWatching", "JuliaInterpreter", "LibGit2", "LoweredCodeUtils", "OrderedCollections", "Pkg", "REPL", "Requires", "UUIDs", "Unicode"]
+git-tree-sha1 = "b72fa706920b1421d581525de9f4e442b95ba254"
+uuid = "295af30f-e4ad-537b-8983-00126c2a3abe"
+version = "3.1.14"
 
 [[Rotations]]
 deps = ["LinearAlgebra", "StaticArrays", "Statistics"]
