@@ -151,20 +151,17 @@ function plan_trajectory(
         equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
         opt.ftol_abs = ftol_abs
         minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
-    elseif solver==:AUGLAG
+    elseif solver==:AUGLAG # experimental
         qm = convertto_auglag_quadratic(f)
         prob = Problem(qm, convertto_auglag_const(h), convertto_auglag_const(g), n_whole)
         internal_data = AugLag.gen_init_data(prob)
         x_opt = xi_init
         xtol = 1e-2
-
-        for i in 1:1
+        for i in 1:2
             println(i)
             x_opt_pre = x_opt
-            x_opt = step_auglag(x_opt, prob, internal_data, xtol)
-            if maximum(abs.(x_opt - x_opt_pre)) < xtol
-                break
-            end
+            x_opt, grad = step_auglag(x_opt, prob, internal_data, xtol)
+            println(maximum(abs.(grad)))
         end
         xi_solved = x_opt
     end

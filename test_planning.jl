@@ -26,11 +26,11 @@ add_coll_links(sscc, find_link(mech, "torso_lift_link"))
 add_coll_links(sscc, find_link(mech, "upperarm_roll_link"))
 add_coll_links(sscc, find_link(mech, "elbow_flex_link"))
 
-pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.7))
-width = Kinematics.SVector3f(0.15, 0.15, 0.5)
+pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.65))
+width = Kinematics.SVector3f(0.2, 0.2, 0.5)
 boxsdf = BoxSDF(pose, width)
 
-n_wp = 18
+n_wp = 10
 q_start = get_joint_angles(mech, joints)
 
 link = find_link(mech, "gripper_link")
@@ -39,18 +39,15 @@ set_joint_angles(mech, joints, q_goal)
 
 
 xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 using ProfileView
 
-@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:AUGLAG)
-@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:NLOPT)
-#@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+@time q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:AUGLAG)
 vis = Visualizer()
 add_sdf(vis, boxsdf)
 add_mechanism(vis, mech)
 open(vis)
 for i in 1:n_wp
-    sleep(0.6)
+    sleep(0.3)
     set_joint_angles(mech, joints, q_seq[:, i])
     update(vis, mech)
 end
