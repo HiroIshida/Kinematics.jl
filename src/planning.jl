@@ -144,14 +144,16 @@ function plan_trajectory(
     elseif solver==:AULA # experimental
         dim = size(f.hessian)[1]
         qm = Aula.QuadraticModel(0.0, zeros(dim), f.hessian)
-        ws = Aula.Workspace(n_dof, n_ineq, n_eq)
+        n_whole = n_dof * n_wp
+        ws = Aula.Workspace(n_whole, n_ineq, n_eq)
         cfg = Aula.Config()
         ineq_const = convertto_aula_const(g)
         eq_const = convertto_aula_const(h)
         xi = xi_init
-        for i in 1:2
+        for i in 1:20
             println(i)
             xi = single_step!(ws, xi, qm, ineq_const, eq_const, cfg)
+            println(norm(ws.dx_cache))
             shoud_abort(ws, cfg) && break
         end
         xi_solved = xi
