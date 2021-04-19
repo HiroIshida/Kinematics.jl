@@ -63,8 +63,6 @@ add_coll_links(sscc, link_attach)
 pose = Transform(SVector3f(1., 0., 0.8))
 width = SVector3f(0.3, 0.3, 0.3)
 boxsdf = BoxSDF(pose, width)
-vals = compute_coll_dists(sscc, joints, angles_solved, boxsdf)
-println(vals)
 
 using MeshCat
 using GeometryBasics

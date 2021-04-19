@@ -1,4 +1,3 @@
-using SequentialQP
 using Aula
 
 struct QuadraticCost

@@ -41,7 +41,7 @@ set_joint_angles(mech, joints, q_goal)
 xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
 using ProfileView
 
-@time q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:NLOPT)
+@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:NLOPT)
 @time q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, solver=:AULA)
 vis = Visualizer()
 add_sdf(vis, boxsdf)
