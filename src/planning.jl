@@ -1,5 +1,3 @@
-using SequentialQP
-
 function cost_metric_matrix(n_wp, weights)
     # TODO levarage sparsity ?
     acc_block = [1 -2 1; -2 4 -2; 1 -2 1]
