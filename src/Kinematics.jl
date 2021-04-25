@@ -17,6 +17,7 @@ using NLopt
 
 const SVector3f = SVector{3, Float64}
 const SVector4f = SVector{4, Float64}
+const MVector3f = MVector{3, Float64}
 
 macro debugassert(test)
   esc(:(if $(@__MODULE__).debugging()

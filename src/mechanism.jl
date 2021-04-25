@@ -174,6 +174,7 @@ end
 
 @inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (set_joint_angle(m, joint.id, angle))
 @inbounds set_joint_angle(m::Mechanism, joint_id::Int, angle) = (m.angles[joint_id] = angle; invalidate_cache!(m))
+@inline set_base_pose(m::Mechanism, vec::AbstractArray) = (m.base_pose = MVector3f(vec); invalidate_cache!(m))
 
 function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
     n_dof = length(joints)
@@ -191,16 +192,11 @@ function get_joint_angles(m::Mechanism, joints::Vector{Joint})
 end
 
 function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
-    for (joint, a) in zip(joints, angles)
+    jangle = (m.with_base ? (@view angles[1:end-3]) : angles)
+    for (joint, a) in zip(joints, jangle)
         m.angles[joint.id] = a
     end
-    invalidate_cache!(m)
-end
-
-function set_joint_angles(m::Mechanism, joint_ids::Vector{Int}, angles)
-    for (id, a) in zip(joint_ids, angles)
-        m.angles[id] = a
-    end
+    m.with_base && (m.base_pose = MVector3f(@view angles[end-2:end]))
     invalidate_cache!(m)
 end
 
