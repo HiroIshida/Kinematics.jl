@@ -1,3 +1,5 @@
+function base_pose_to_transform(pose::StaticVector{3, T}) where T<:Real
+end
 function get_transform(m::Mechanism, link::Link)
     iscached(m, link) && (return get_cache(m, link))
     return _get_transform(m, link)
@@ -8,12 +10,21 @@ function _get_transform(m::Mechanism, hlink::Link)
     # plink : parent link
     @debugassert isempty(m.tf_stack)
     @debugassert isempty(m.link_id_stack)
-    tf_world_to_hlink = zero(Transform) # TODO with_base
+
+    tf_world_to_hlink = _get_shallowest_cache!(m, hlink)
+
+    while(!isempty(m.tf_stack))
+        hlink_id = pop!(m.link_id_stack)
+        tf_plink_to_hlink = pop!(m.tf_stack)
+        tf_world_to_hlink = tf_world_to_hlink * tf_plink_to_hlink
+        set_cache!(m, hlink_id, tf_world_to_hlink)
+    end
+    return tf_world_to_hlink
+end
+
+function _get_shallowest_cache!(m::Mechanism, hlink::Link)
     while(!isroot(hlink))
-        if iscached(m, hlink) 
-            tf_world_to_hlink = get_cache(m, hlink)
-            break
-        end
+        iscached(m, hlink) && (return get_cache(m, hlink))
         plink = parent_link(m, hlink)
         hjoint = parent_joint(m, hlink)
         angle = joint_angle(m, hjoint)
@@ -23,14 +34,8 @@ function _get_transform(m::Mechanism, hlink::Link)
         push!(m.link_id_stack, hlink.id)
         hlink = parent_link(m, hlink)
     end
-
-    while(!isempty(m.tf_stack))
-        hlink_id = pop!(m.link_id_stack)
-        tf_plink_to_hlink = pop!(m.tf_stack)
-        tf_world_to_hlink = tf_world_to_hlink * tf_plink_to_hlink
-        set_cache!(m, hlink_id, tf_world_to_hlink)
-    end
-    return tf_world_to_hlink
+    # couldn't find the cache. Thus, returning the transform of the root 
+    return m.with_base ? base_pose_to_transform(m.base_pose) : zero(Transform)
 end
 
 # TODO cache joint axes

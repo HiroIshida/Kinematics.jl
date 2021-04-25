@@ -130,6 +130,8 @@ mutable struct Mechanism
     tf_cache::CacheVector{Transform}
     axis_cache::CacheVector{FloatingAxis}
     angles::Vector{Float64}
+    base_pose::MVector{3, Float64}
+    with_base::Bool
 
     rptable::Vector{BitVector}
 
@@ -138,11 +140,12 @@ mutable struct Mechanism
     link_id_stack::PseudoStack{Int64}
     tf_stack::PseudoStack{Transform}
 end
-function Mechanism(links, joints, linkid_map, jointid_map)
+function Mechanism(links, joints, linkid_map, jointid_map, with_base)
     n_links = length(links)
     n_joints = length(joints)
     tf_cache = CacheVector(n_links, zero(Transform)) # TODO should be zero -> one
     axis_cache = CacheVector(n_joints, one(FloatingAxis))
+    base_pose = MVector{3, Float64}(0.0, 0.0, 0.0)
 
     rptable = create_rptable(links, Vector{Joint}(joints)) # TODO any better way?
 
@@ -151,7 +154,7 @@ function Mechanism(links, joints, linkid_map, jointid_map)
     tf_stack = PseudoStack(Transform, n_links)
     Mechanism(links, joints, linkid_map, jointid_map,
         tf_cache, axis_cache,
-        angles, rptable, link_id_stack, tf_stack)
+        angles, base_pose, with_base, rptable, link_id_stack, tf_stack)
 end
 
 @inbounds @inline parent_link(m::Mechanism, joint::Joint) = m.links[joint.plink_id]
