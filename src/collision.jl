@@ -97,6 +97,7 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
         end
         get_jacobian!(sscc.mech, link, joints, false, jac)
         out_grads[:, i] = transpose(grad) * jac
+        out_vals[:] -= sscc.sphere_radii
     end
 end
 
