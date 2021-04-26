@@ -1,6 +1,6 @@
 to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 
-create_vis_object(md::BoxMetaData) = (Rect(Vec((-0.5*md.extents)...), Vec(0.5*md.extents...)))
+create_vis_object(md::BoxMetaData) = (Rect(Vec((-0.5*md.extents)...), Vec(1.0*md.extents...)))
 create_vis_object(md::MeshMetaData) = (MeshFileGeometry(md.file_path))
 
 create_vis_sphere(radius) = (HyperSphere(Point(0, 0, 0.), radius))
@@ -22,7 +22,7 @@ function update(vis::Visualizer, mech::Mechanism, link::Link)
 end
 
 function add_sdf(vis::Visualizer, boxsdf::BoxSDF)
-    setobject!(vis[:sdf], Rect(Vec(0, 0, 0.), Vec(boxsdf.width)))
+    setobject!(vis[:sdf], Rect(Vec(-0.5*boxsdf.width), Vec(boxsdf.width)))
     settransform!(vis[:sdf], to_affine_map(boxsdf.pose))
 end
 
