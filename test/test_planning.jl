@@ -20,8 +20,8 @@
         add_coll_links(sscc, find_link(mech, "upperarm_roll_link"))
         add_coll_links(sscc, find_link(mech, "elbow_flex_link"))
 
-        pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.7))
-        width = Kinematics.SVector3f(0.15, 0.15, 0.5)
+        pose = Transform(Kinematics.SVector3f(0.4, -0.25, 0.7))
+        width = Kinematics.SVector3f(0.05, 0.05, 0.5)
         boxsdf = BoxSDF(pose, width)
 
         n_wp = 30
@@ -32,9 +32,10 @@
         set_joint_angles(mech, joints, q_goal)
 
         xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-        q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+        q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-5)
 
         for i in 1:n_wp 
+            set_joint_angles(mech, joints, q_seq[:, i])
             vals = compute_coll_dists(sscc, joints, boxsdf)
             @test all(vals.>-1e-2, dims=1)[1]
         end

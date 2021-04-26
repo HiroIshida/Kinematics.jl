@@ -65,7 +65,7 @@ function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{J
     for i in 1:length(sscc.sphere_links)
         link = sscc.sphere_links[i]
         pt = translation(get_transform(sscc.mech, link))
-        out_vals[i] = sdf(pt)
+        out_vals[i] = sdf(pt) - sscc.sphere_radii[i]
     end
 end
 
@@ -83,7 +83,9 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
     eps = 1e-7
     grad = MVector{3, Float64}(undef)
     pt1 = MVector{3, Float64}(undef)
-    jac = zeros(3, length(joints))
+    n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
+    @debugassert size(out_grads, 1) == n_dof
+    jac = zeros(3, n_dof)
 
     for i in 1:n_col
         link = sscc.sphere_links[i]
@@ -97,13 +99,15 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
         end
         get_jacobian!(sscc.mech, link, joints, false, jac)
         out_grads[:, i] = transpose(grad) * jac
+        out_vals[i] -= sscc.sphere_radii[i]
     end
 end
 
 function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction) 
     n_feature = length(sscc.sphere_links)
+    n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     out_vals = Vector{Float64}(undef, n_feature)
-    out_grads = Array{Float64}(undef, length(joints), n_feature)
+    out_grads = Array{Float64}(undef, n_dof, n_feature)
     compute_coll_dists_and_grads!(sscc, joints, sdf, out_vals, out_grads)
     return out_vals, out_grads
 end
