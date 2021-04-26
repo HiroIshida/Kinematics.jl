@@ -129,6 +129,8 @@ function plan_trajectory(
     equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
     opt.ftol_abs = ftol_abs
     minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+    ret == :FORCED_STOP && error("nlopt forced stop")
+
     q_seq = reshape(xi_solved, (n_dof, n_wp))
-    return q_seq
+    return q_seq, ret
 end

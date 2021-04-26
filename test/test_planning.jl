@@ -32,7 +32,9 @@
         set_joint_angles(mech, joints, q_goal)
 
         xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-        q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-5)
+        q_seq, status = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-5)
+
+        @test status == :FTOL_REACHED
 
         for i in 1:n_wp 
             set_joint_angles(mech, joints, q_seq[:, i])
