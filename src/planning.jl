@@ -38,9 +38,8 @@ function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
         sdf::SignedDistanceFunction,
-        q_start, q_goal, n_wp
+        q_start, q_goal, n_wp, n_dof
         )
-    n_dof = length(joints)
     n_whole = n_dof * n_wp
 
     function create_objective()
@@ -111,9 +110,11 @@ function plan_trajectory(
         ;
         ftol_abs=1e-3
         )
+    n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
+    @assert length(q_start) == n_dof
+    @assert length(q_goal) == n_dof
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
-    f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp)
-    n_dof = length(joints)
+    f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
 
     opt = Opt(:LD_SLSQP, n_whole)
     opt.min_objective = convertto_nlopt_objective(f)
