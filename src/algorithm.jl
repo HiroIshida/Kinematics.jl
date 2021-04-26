@@ -8,12 +8,21 @@ function _get_transform(m::Mechanism, hlink::Link)
     # plink : parent link
     @debugassert isempty(m.tf_stack)
     @debugassert isempty(m.link_id_stack)
-    tf_world_to_hlink = zero(Transform) # TODO with_base
+
+    tf_world_to_hlink = _get_shallowest_cache!(m, hlink)
+
+    while(!isempty(m.tf_stack))
+        hlink_id = pop!(m.link_id_stack)
+        tf_plink_to_hlink = pop!(m.tf_stack)
+        tf_world_to_hlink = tf_world_to_hlink * tf_plink_to_hlink
+        set_cache!(m, hlink_id, tf_world_to_hlink)
+    end
+    return tf_world_to_hlink
+end
+
+function _get_shallowest_cache!(m::Mechanism, hlink::Link)
     while(!isroot(hlink))
-        if iscached(m, hlink) 
-            tf_world_to_hlink = get_cache(m, hlink)
-            break
-        end
+        iscached(m, hlink) && (return get_cache(m, hlink))
         plink = parent_link(m, hlink)
         hjoint = parent_joint(m, hlink)
         angle = joint_angle(m, hjoint)
@@ -23,14 +32,8 @@ function _get_transform(m::Mechanism, hlink::Link)
         push!(m.link_id_stack, hlink.id)
         hlink = parent_link(m, hlink)
     end
-
-    while(!isempty(m.tf_stack))
-        hlink_id = pop!(m.link_id_stack)
-        tf_plink_to_hlink = pop!(m.tf_stack)
-        tf_world_to_hlink = tf_world_to_hlink * tf_plink_to_hlink
-        set_cache!(m, hlink_id, tf_world_to_hlink)
-    end
-    return tf_world_to_hlink
+    # couldn't find the cache. Thus, returning the transform of the root 
+    return m.with_base ? base_pose_to_transform(m.base_pose) : zero(Transform)
 end
 
 # TODO cache joint axes
@@ -68,17 +71,28 @@ function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
         with_rot::Bool,
         mat_out::AbstractMatrix) where J<:Joint
     tf_world_to_link = get_transform(m, link)
-    for i in 1:length(joints)
+    n_joint = length(joints)
+    for i in 1:n_joint
         joint = joints[i]
         if is_relevant(m, joint, link)
             joint_jacobian!(m, link, joint, tf_world_to_link, with_rot, @view mat_out[:, i])
+        end
+    end
+
+    if m.with_base
+        trans_from_root = translation(tf_world_to_link) - [m.base_pose[1], m.base_pose[2], 0.0]
+        x, y, _ = trans_from_root
+        mat_out[1:3, n_joint+1:n_joint+3] = [1. 0 -y; 0 1 x; 0 0 0]
+        if with_rot
+            mat_out[4:6, n_joint+1:n_joint+3] = [0. 0 0; 0 0 0; 0 0 1.0]
         end
     end
 end
 
 function get_jacobian(m::Mechanism, link::Link, joints::Vector{Joint}, with_rot::Bool)
     rows = (with_rot ? 6 : 3)
-    jacobian = zeros(Float64, rows, length(joints))
+    cols = (m.with_base ? length(joints) + 3 : length(joints))
+    jacobian = zeros(Float64, rows, cols)
     get_jacobian!(m, link, joints, with_rot, jacobian)
     return jacobian
 end

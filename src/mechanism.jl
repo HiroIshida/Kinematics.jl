@@ -130,6 +130,8 @@ mutable struct Mechanism
     tf_cache::CacheVector{Transform}
     axis_cache::CacheVector{FloatingAxis}
     angles::Vector{Float64}
+    base_pose::MVector{3, Float64}
+    with_base::Bool
 
     rptable::Vector{BitVector}
 
@@ -138,11 +140,12 @@ mutable struct Mechanism
     link_id_stack::PseudoStack{Int64}
     tf_stack::PseudoStack{Transform}
 end
-function Mechanism(links, joints, linkid_map, jointid_map)
+function Mechanism(links, joints, linkid_map, jointid_map, with_base)
     n_links = length(links)
     n_joints = length(joints)
     tf_cache = CacheVector(n_links, zero(Transform)) # TODO should be zero -> one
     axis_cache = CacheVector(n_joints, one(FloatingAxis))
+    base_pose = MVector{3, Float64}(0.0, 0.0, 0.0)
 
     rptable = create_rptable(links, Vector{Joint}(joints)) # TODO any better way?
 
@@ -151,7 +154,7 @@ function Mechanism(links, joints, linkid_map, jointid_map)
     tf_stack = PseudoStack(Transform, n_links)
     Mechanism(links, joints, linkid_map, jointid_map,
         tf_cache, axis_cache,
-        angles, rptable, link_id_stack, tf_stack)
+        angles, base_pose, with_base, rptable, link_id_stack, tf_stack)
 end
 
 @inbounds @inline parent_link(m::Mechanism, joint::Joint) = m.links[joint.plink_id]
@@ -171,6 +174,7 @@ end
 
 @inbounds @inline set_joint_angle(m::Mechanism, joint::Joint, angle) = (set_joint_angle(m, joint.id, angle))
 @inbounds set_joint_angle(m::Mechanism, joint_id::Int, angle) = (m.angles[joint_id] = angle; invalidate_cache!(m))
+@inline set_base_pose(m::Mechanism, vec::AbstractArray) = (m.base_pose = MVector3f(vec); invalidate_cache!(m))
 
 function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
     n_dof = length(joints)
@@ -188,16 +192,12 @@ function get_joint_angles(m::Mechanism, joints::Vector{Joint})
 end
 
 function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
-    for (joint, a) in zip(joints, angles)
+    @debugassert length(joints) + (m.with_base ? 3 : 0) == length(angles) 
+    jangle = (m.with_base ? (@view angles[1:end-3]) : angles)
+    for (joint, a) in zip(joints, jangle)
         m.angles[joint.id] = a
     end
-    invalidate_cache!(m)
-end
-
-function set_joint_angles(m::Mechanism, joint_ids::Vector{Int}, angles)
-    for (id, a) in zip(joint_ids, angles)
-        m.angles[id] = a
-    end
+    m.with_base && (m.base_pose = MVector3f(@view angles[end-2:end]))
     invalidate_cache!(m)
 end
 

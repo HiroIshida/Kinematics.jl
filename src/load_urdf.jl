@@ -17,7 +17,7 @@ function geo_mata_from_urdf_link(geom_urdf)
     end
 end
 
-function parse_urdf(urdf_path)
+function parse_urdf(urdf_path; with_base=false)
     urdf_model = __skrobot__.utils.URDF.load(urdf_path)
     jointid_map = Dict()
     for i in 1:length(urdf_model.joints)
@@ -76,7 +76,7 @@ function parse_urdf(urdf_path)
     end
 
     links = map(Link, links_tmp)
-    mech = Mechanism(links, joints, linkid_map, jointid_map)
+    mech = Mechanism(links, joints, linkid_map, jointid_map, with_base)
 end
 
 """
