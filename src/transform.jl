@@ -31,7 +31,7 @@ end
 end
 
 @inline function base_pose_to_transform(pose::StaticVector{3, T}) where T<:AbstractFloat
-    q = UnitQuaternion(0.0, 0.0, sin(0.5 * pose[3]), cos(0.5 * pose[3]))
+    q = UnitQuaternion(cos(0.5 * pose[3]), 0.0, 0.0, sin(0.5 * pose[3]))
     trans = SVector3f(pose[1], pose[2], 0.0)
     return Transform(trans, q)
 end
