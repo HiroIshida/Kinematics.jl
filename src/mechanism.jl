@@ -177,15 +177,20 @@ end
 @inline set_base_pose(m::Mechanism, vec::AbstractArray) = (m.base_pose = MVector3f(vec); invalidate_cache!(m))
 
 function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
-    n_dof = length(joints)
-    @debugassert length(angle_vector) == n_dof
-    for i in 1:n_dof
+    n_joints = length(joints)
+    @debugassert length(angle_vector) == n_joints + (m.with_base ? 3 : 0)
+    for i in 1:n_joints
         angle_vector[i] = m.angles[joints[i].id]
+    end
+    if m.with_base
+        for i in 1:3
+            angle_vector[n_joints+i] = m.base_pose[i]
+        end
     end
 end
 
 function get_joint_angles(m::Mechanism, joints::Vector{Joint})
-    n_dof = length(joints)
+    n_dof = length(joints) + (m.with_base ? 3 : 0)
     angle_vector = zeros(n_dof)
     get_joint_angles!(m, joints, angle_vector)
     return angle_vector
