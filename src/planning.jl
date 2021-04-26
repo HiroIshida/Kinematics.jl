@@ -113,6 +113,13 @@ function plan_trajectory(
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     @assert length(q_start) == n_dof
     @assert length(q_goal) == n_dof
+
+    set_joint_angles(sscc.mech, joints, q_start)
+    @assert all(compute_coll_dists(sscc, joints, sdf) .> 0.0, dims=1)[1]
+
+    set_joint_angles(sscc.mech, joints, q_goal)
+    @assert all(compute_coll_dists(sscc, joints, sdf) .> 0.0, dims=1)[1]
+
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
 
