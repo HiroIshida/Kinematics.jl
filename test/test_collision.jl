@@ -35,4 +35,6 @@
         dists1 = compute_coll_dists(sscc, joints, boxsdf)
         @test isapprox(grads_analytical[i, :], (dists1 - dists0)/eps, atol=1e-5)
     end
+
+    @test compute_coll_dists(sscc, joints, boxsdf) == compute_coll_dists_and_grads(sscc, joints, boxsdf)[1]
 end

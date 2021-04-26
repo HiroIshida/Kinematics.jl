@@ -65,7 +65,7 @@ function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{J
     for i in 1:length(sscc.sphere_links)
         link = sscc.sphere_links[i]
         pt = translation(get_transform(sscc.mech, link))
-        out_vals[i] = sdf(pt)
+        out_vals[i] = sdf(pt) - sscc.sphere_radii[i]
     end
 end
 
@@ -97,7 +97,7 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
         end
         get_jacobian!(sscc.mech, link, joints, false, jac)
         out_grads[:, i] = transpose(grad) * jac
-        out_vals[:] -= sscc.sphere_radii
+        out_vals[i] -= sscc.sphere_radii[i]
     end
 end
 
