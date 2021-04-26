@@ -45,11 +45,17 @@ function add_coll_links(sscc::SweptSphereCollisionChecker, coll_link::Link)
     end
 end
 
-function add_coll_sphers_to_vis(vis::Visualizer, sscc::SweptSphereCollisionChecker)
+function add_sscc(vis::Visualizer, sscc::SweptSphereCollisionChecker)
     for (sphere, radius) in zip(sscc.sphere_links, sscc.sphere_radii)
         vis_sphere = create_vis_sphere(radius)
         println(sphere.name)
         setobject!(vis[:sscc][sphere.name], vis_sphere, yellow_material())
+        settransform!(vis[:sscc][sphere.name], to_affine_map(get_transform(sscc.mech, sphere)))
+    end
+end
+
+function update(vis::Visualizer, sscc::SweptSphereCollisionChecker)
+    for sphere in sscc.sphere_links
         settransform!(vis[:sscc][sphere.name], to_affine_map(get_transform(sscc.mech, sphere)))
     end
 end
