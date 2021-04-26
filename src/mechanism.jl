@@ -192,6 +192,7 @@ function get_joint_angles(m::Mechanism, joints::Vector{Joint})
 end
 
 function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
+    @debugassert length(joints) + (m.with_base ? 3 : 0) == length(angles) 
     jangle = (m.with_base ? (@view angles[1:end-3]) : angles)
     for (joint, a) in zip(joints, jangle)
         m.angles[joint.id] = a
