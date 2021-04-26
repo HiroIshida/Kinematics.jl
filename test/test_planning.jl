@@ -35,6 +35,7 @@
         q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 
         for i in 1:n_wp 
+            set_joint_angles(mech, joints, q_seq[:, i])
             vals = compute_coll_dists(sscc, joints, boxsdf)
             @test all(vals.>-1e-2, dims=1)[1]
         end
