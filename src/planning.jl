@@ -1,3 +1,14 @@
+using Aula
+
+struct QuadraticCost
+    hessian::Matrix
+end
+
+function (qc::QuadraticCost)(x::Vector) 
+    hx = qc.hessian * x
+    return dot(x, hx), 2 * hx
+end
+
 function cost_metric_matrix(n_wp, weights)
     # TODO levarage sparsity ?
     acc_block = [1 -2 1; -2 4 -2; 1 -2 1]
@@ -34,6 +45,20 @@ function convertto_nlopt_objective(objective_canonical)
     return inner
 end
 
+function convertto_aula_quadratic(f::QuadraticCost) 
+    dim = size(f.hessian)[1]
+    return Aula.QuadraticModel(0.0, zeros(dim), f.hessian)
+end
+
+function convertto_aula_const(const_canonical)
+    function inner(x::Vector)
+        val, jac = const_canonical(x)
+        return val, transpose(jac)
+    end
+    return inner
+end
+
+
 function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
@@ -45,12 +70,7 @@ function construct_problem(
     function create_objective()
         weights = ones(n_dof)
         A = cost_metric_matrix(n_wp, weights)
-        function objective(xi)
-            val = transpose(xi) * A * xi
-            grad = 2 * A * xi
-            return val, grad
-        end
-        return objective
+        return QuadraticCost(A)
     end
 
     function create_ineqconst()
@@ -108,7 +128,8 @@ function plan_trajectory(
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;
-        ftol_abs=1e-3
+        ftol_abs=1e-3,
+        solver=:NLOPT
         )
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     @assert length(q_start) == n_dof
@@ -123,14 +144,34 @@ function plan_trajectory(
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
 
-    opt = Opt(:LD_SLSQP, n_whole)
-    opt.min_objective = convertto_nlopt_objective(f)
-    inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
-    equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
-    opt.ftol_abs = ftol_abs
-    minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
-    ret == :FORCED_STOP && error("nlopt forced stop")
+    if solver==:NLOPT
+        opt = Opt(:LD_SLSQP, n_whole)
+        opt.min_objective = convertto_nlopt_objective(f)
+        inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
+        equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
+        opt.ftol_abs = ftol_abs
+        minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+        ret == :FORCED_STOP && error("nlopt forced stop")
 
+    elseif solver==:AULA
+        dim = size(f.hessian)[1]
+        qm = Aula.QuadraticModel(0.0, zeros(dim), f.hessian)
+        n_whole = n_dof * n_wp
+        ws = Aula.Workspace(n_whole, n_ineq, n_eq)
+        cfg = Aula.Config()
+
+        ineq_const = convertto_aula_const(g)
+        eq_const = convertto_aula_const(h)
+        xi = xi_init
+        for i in 1:14
+            println(i)
+            xi = single_step!(ws, xi, qm, ineq_const, eq_const, cfg)
+            println(norm(ws.dx_cache))
+            shoud_abort(ws, cfg) && break
+        end
+        xi_solved = xi
+        ret = :FTOL_REACHED
+    end
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq, ret
 end
