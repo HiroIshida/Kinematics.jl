@@ -6,6 +6,7 @@ const __trimesh__ = PyCall.PyNULL()
 
 using Rotations
 using StaticArrays
+using SparseArrays
 using LinearAlgebra
 
 using MeshCat

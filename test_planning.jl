@@ -3,12 +3,12 @@ using Kinematics
 using StaticArrays
 using BenchmarkTools
 using Profile
-
-urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
-mech = parse_urdf(urdf_path)
-
 using MeshCat
 
+with_base = false
+
+urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
+mech = parse_urdf(urdf_path, with_base=with_base)
 joint_names = [
         "torso_lift_joint",
         "shoulder_pan_joint",
@@ -26,24 +26,19 @@ add_coll_links(sscc, find_link(mech, "torso_lift_link"))
 add_coll_links(sscc, find_link(mech, "upperarm_roll_link"))
 add_coll_links(sscc, find_link(mech, "elbow_flex_link"))
 
-pose = Transform(Kinematics.SVector3f(0.4, -0.3, 0.7))
-width = Kinematics.SVector3f(0.15, 0.15, 0.5)
+pose = Transform(Kinematics.SVector3f(0.4, -0.25, 0.7))
+width = Kinematics.SVector3f(0.05, 0.05, 0.5)
 boxsdf = BoxSDF(pose, width)
 
-n_wp = 30
+n_wp = 10
 q_start = get_joint_angles(mech, joints)
 
 link = find_link(mech, "gripper_link")
 q_goal = point_inverse_kinematics(mech, link, joints, SVector{3, Float64}(0.3, -0.4, 1.2))
 set_joint_angles(mech, joints, q_goal)
 
+q_seq, _ = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 
-xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
-using ProfileView
-
-q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
-@btime q_seq = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
 vis = Visualizer()
 add_sdf(vis, boxsdf)
 add_mechanism(vis, mech)
