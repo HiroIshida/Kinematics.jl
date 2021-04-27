@@ -1,5 +1,10 @@
-function cost_metric_matrix(n_wp, weights)
-    # TODO levarage sparsity ?
+mutable struct Objective
+    A::SparseMatrixCSC{Float64, Int64}
+    n_dim::Int
+end
+
+function Objective(n_wp::Int, weights)
+    # create cost matrix A
     acc_block = [1 -2 1; -2 4 -2; 1 -2 1]
     A_sub = zeros(n_wp, n_wp)
     for i in 2:n_wp-1
@@ -7,7 +12,15 @@ function cost_metric_matrix(n_wp, weights)
     end
     weight_matrix = Diagonal(weights.^2)
     A = kron(A_sub, weight_matrix)
-    return A
+    n_dim = size(A, 2)
+    Objective(sparse(A), n_dim)
+end
+
+function (this::Objective)(xi::AbstractVector, grad::AbstractVector)
+    tmp = this.A * xi
+    val = transpose(xi) * tmp
+    length(grad) > 0 && copy!(grad, 2 * tmp)
+    return val
 end
 
 function create_straight_trajectory(q_start, q_goal, n_wp)
@@ -25,15 +38,6 @@ function convertto_nlopt_const(const_canonical)
     return inner
 end
 
-function convertto_nlopt_objective(objective_canonical)
-    function inner(x::Vector, grad::Vector)
-        val, grad_ = objective_canonical(x)
-        length(grad) > 0 && copy!(grad, grad_)
-        return val
-    end
-    return inner
-end
-
 function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{Joint},
@@ -41,17 +45,6 @@ function construct_problem(
         q_start, q_goal, n_wp, n_dof
         )
     n_whole = n_dof * n_wp
-
-    function create_objective()
-        weights = ones(n_dof)
-        A = cost_metric_matrix(n_wp, weights)
-        function objective(xi)
-            val = transpose(xi) * A * xi
-            grad = 2 * A * xi
-            return val, grad
-        end
-        return objective
-    end
 
     function create_ineqconst()
         n_coll = length(sscc.sphere_links)
@@ -94,8 +87,7 @@ function construct_problem(
         return eqconst, n_eq
     end
 
-
-    f = create_objective()
+    f = Objective(n_wp, ones(n_dof))
     g, n_ineq = create_ineqconst()
     h, n_eq = create_eqconst()
     return f, g, h, n_whole, n_ineq, n_eq
@@ -126,7 +118,7 @@ function plan_trajectory(
 
     if solver==:NLOPT
         opt = Opt(:LD_SLSQP, n_whole)
-        opt.min_objective = convertto_nlopt_objective(f)
+        opt.min_objective = (x::Vector, grad::Vector) -> f(x, grad)
         inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
         equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
         opt.ftol_abs = ftol_abs
