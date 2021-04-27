@@ -1,6 +1,7 @@
 mutable struct Objective
     A::SparseMatrixCSC{Float64, Int64}
     n_dim::Int
+    _tmp::Vector # to avoid alloc
 end
 
 function Objective(n_wp::Int, weights)
@@ -11,15 +12,18 @@ function Objective(n_wp::Int, weights)
         A_sub[i-1:i+1, i-1:i+1] += acc_block
     end
     weight_matrix = Diagonal(weights.^2)
+
     A = kron(A_sub, weight_matrix)
     n_dim = size(A, 2)
-    Objective(sparse(A), n_dim)
+    _tmp = zeros(n_dim)
+    Objective(sparse(A), n_dim, _tmp)
 end
 
 function (this::Objective)(xi::AbstractVector, grad::AbstractVector)
-    tmp = this.A * xi
+    tmp = this._tmp
+    mul!(tmp, this.A, xi)
     val = transpose(xi) * tmp
-    length(grad) > 0 && copy!(grad, 2 * tmp)
+    length(grad) > 0 && mul!(grad, 2, tmp)
     return val
 end
 
