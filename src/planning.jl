@@ -108,7 +108,8 @@ function plan_trajectory(
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;
-        ftol_abs=1e-3
+        ftol_abs=1e-3,
+        solver=:NLOPT
         )
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     @assert length(q_start) == n_dof
@@ -123,13 +124,17 @@ function plan_trajectory(
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     f, g, h, n_whole, n_ineq, n_eq = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
 
-    opt = Opt(:LD_SLSQP, n_whole)
-    opt.min_objective = convertto_nlopt_objective(f)
-    inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
-    equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
-    opt.ftol_abs = ftol_abs
-    minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
-    ret == :FORCED_STOP && error("nlopt forced stop")
+    if solver==:NLOPT
+        opt = Opt(:LD_SLSQP, n_whole)
+        opt.min_objective = convertto_nlopt_objective(f)
+        inequality_constraint!(opt, convertto_nlopt_const(g), [1e-8 for _ in 1:n_ineq])
+        equality_constraint!(opt, convertto_nlopt_const(h), [1e-8 for _ in 1:n_eq])
+        opt.ftol_abs = ftol_abs
+        minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
+        ret == :FORCED_STOP && error("nlopt forced stop")
+    else
+        error("not an available solver")
+    end
 
     q_seq = reshape(xi_solved, (n_dof, n_wp))
     return q_seq, ret
