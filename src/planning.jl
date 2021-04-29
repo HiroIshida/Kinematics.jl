@@ -51,7 +51,7 @@ function IneqConst(sscc::SweptSphereCollisionChecker, joints, sdf, n_wp)
     return IneqConst(sscc, joints, sdf, n_wp, n_dof, n_coll, n_cons, jac_mat, val_vec)
 end
 
-function (this::IneqConst)(val_vec::AbstractVector, xi::AbstractVector, jac_mat::AbstractMatrix)
+function (this::IneqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
     n_dof, n_wp, n_coll, n_cons = this.n_dof, this.n_wp, this.n_coll, this.n_cons
     xi_reshaped = reshape(xi, (n_dof, n_wp))
     for i in 1:n_wp
@@ -84,7 +84,7 @@ function EqConst(n_dof, n_wp, q_start, q_goal)
     EqConst(n_dof, n_wp, n_cons, q_start, q_goal, jac_mat, val_vec)
 end
 
-function (this::EqConst)(val_vec::AbstractVector, xi::AbstractVector, jac_mat::AbstractMatrix)
+function (this::EqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
     n_dof, n_wp = this.n_dof, this.n_wp
     xi_reshaped = reshape(xi, (n_dof, n_wp))
     jac_mat[1:n_dof, 1:n_dof] = -Matrix{Float64}(I, n_dof, n_dof)
@@ -95,7 +95,7 @@ end
 
 function nloptize(cons::Constraint)
     function inner(val::Vector, xi::Vector, jac::Matrix)
-        cons(cons.val_vec, xi, cons.jac_mat)
+        cons(xi, cons.val_vec, cons.jac_mat)
         copy!(val, -cons.val_vec)
         length(jac) > 0 && copy!(jac, -cons.jac_mat)
     end
@@ -144,8 +144,6 @@ function plan_trajectory(
 
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     f, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
-
-    H(H.val_vec, xi_init, H.jac_mat)
 
     if solver==:NLOPT
         opt = Opt(:LD_SLSQP, n_whole)
