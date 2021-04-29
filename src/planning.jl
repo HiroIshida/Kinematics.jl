@@ -107,11 +107,10 @@ mutable struct IpoptManager
     ineqconst::IneqConst
     eqconst::EqConst
 
-    jac_mat::Matrix{Float64}
     idxes::Vector{Tuple{Int, Int}}
 
     f_grad_cache::Vector{Float64}
-    g_jac_cache::Vector{Float64} # vector because jac is sparse matrix
+    g_jac_cache::Matrix{Float64} # vector because jac is sparse matrix
 end
 
 function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqConst) 
@@ -139,18 +138,18 @@ function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqCon
 
     f_grad_cache = ones(n_decision) * Inf
     g_jac_cache = ones(length(idxes)) * Inf
-    IpoptManager(objective, ineqconst, eqconst, jac_mat, idxes, f_grad_cache, g_jac_cache)
+    IpoptManager(objective, ineqconst, eqconst, idxes, f_grad_cache, jac_mat)
 end
 
 eval_f(ipoptm::IpoptManager, x) = ipoptm.objective(x, ipoptm.f_grad_cache)
 eval_f_grad(ipoptm::IpoptManager, x, grad) = (grad[:] = ipoptm.f_grad_cache)
 function eval_g(ipoptm::IpoptManager, x, val_vec)
-    n_cons_total = eqconst.n_cons + ineqconst.n_cons
-    n_decision = eqconst.n_dof * eqconst.n_wp
-    jac_mat_ineq = @view ipoptm.g_jac_cache[:, 1:ineqconst.n_cons]
-    jac_mat_eq = @view ipoptm.g_jac_cache[:, ineqconst.n_cons+1:end]
-    val_vec_ineq = @view val_vec[1:ineqconst.n_cons]
-    val_vec_eq = @view val_vec[ineqconst.n_cons+1:end]
+    n_cons_total = ipoptm.eqconst.n_cons + ipoptm.ineqconst.n_cons
+    n_decision = ipoptm.eqconst.n_dof * ipoptm.eqconst.n_wp
+    jac_mat_ineq = @view ipoptm.g_jac_cache[:, 1:ipoptm.ineqconst.n_cons]
+    jac_mat_eq = @view ipoptm.g_jac_cache[:, ipoptm.ineqconst.n_cons+1:end]
+    val_vec_ineq = @view val_vec[1:ipoptm.ineqconst.n_cons]
+    val_vec_eq = @view val_vec[ipoptm.ineqconst.n_cons+1:end]
 
     ipoptm.ineqconst(x, val_vec_ineq, jac_mat_ineq)
     ipoptm.eqconst(x, val_vec_eq, jac_mat_eq)
@@ -164,9 +163,36 @@ function eval_g_jac(ipoptm::IpoptManager, x, mode, rows, cols, values)
         end
     else
         for i in 1:n_elems
-            values[i] = ipoptm.g_jac_cache[pair[1], pair[2]]
+            pair = ipoptm.idxes[i]
+            values[i] = ipoptm.g_jac_cache[pair[2], pair[1]] # NOTE transposed
         end
     end
+end
+
+function create_problem(ipoptm::IpoptManager)
+    infty = 1e-10
+    n = ipoptm.ineqconst.n_dof * ipoptm.ineqconst.n_wp
+    x_L = [-infty for _ in 1:n]
+    x_U = [infty for _ in 1:n]
+
+    m_ineq = ipoptm.ineqconst.n_cons
+    m_eq = ipoptm.eqconst.n_cons
+    m = m_ineq + m_eq
+    g_L = vcat([0.0 for _ in 1:m_ineq], [0.0 for _ in 1:m_eq])
+    g_U = vcat([infty for _ in 1:m_ineq], [0.0 for _ in 1:m_eq])
+
+    nelem_jac = length(ipoptm.idxes)
+    nelem_hess = 0 # dummy
+
+    _eval_f = (x)->eval_f(ipoptm, x)
+    _eval_f_grad = (x, grad)->eval_f_grad(ipoptm, x, grad)
+    _eval_g = (x, val_vec)->eval_g(ipoptm, x, val_vec)
+    _eval_g_jac = (x, mode, rows, cols, values) -> eval_g_jac(ipoptm, x, mode, rows, cols, values)
+    _eval_h = nothing
+    prob = createProblem(n, x_L, x_U, m, g_L, g_U, nelem_jac, nelem_hess, _eval_f, _eval_g, _eval_f_grad, _eval_g_jac, _eval_h)
+    addOption(prob, "hessian_approximation", "limited-memory")
+    addOption(prob, "print_level", 10) # 1 ~ 12; 12 is most verbose
+    return prob
 end
 
 function create_straight_trajectory(q_start, q_goal, n_wp)
@@ -211,7 +237,6 @@ function plan_trajectory(
 
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
-    man = IpoptManager(F, G, H)
 
     if solver==:NLOPT
         opt = Opt(:LD_SLSQP, n_whole)
@@ -221,6 +246,11 @@ function plan_trajectory(
         opt.ftol_abs = ftol_abs
         minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
         ret == :FORCED_STOP && error("nlopt forced stop")
+    elseif solver==:IPOPT
+        ipoptm = IpoptManager(F, G, H)
+        prob = create_problem(ipoptm)
+        prob.x = xi_init
+        status = solveProblem(prob)
     else
         error("not an available solver")
     end
