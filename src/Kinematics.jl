@@ -15,6 +15,7 @@ using CoordinateTransformations
 using Colors: Color, Colorant, RGB, RGBA, alpha, hex, red, green, blue
 using UUIDs
 using NLopt
+using Ipopt
 
 const SVector3f = SVector{3, Float64}
 const SVector4f = SVector{4, Float64}
