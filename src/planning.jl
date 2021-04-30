@@ -143,8 +143,7 @@ end
 
 eval_f(ipoptm::IpoptManager, x) = ipoptm.objective(x, ipoptm.f_grad_cache)
 function eval_f_grad(ipoptm::IpoptManager, x, grad)
-    eval_f(ipoptm, x) # TODO ad hoc
-    @warn "please remove this eval_f."
+    eval_f(ipoptm, x) # TODO ad hoc. Please consider removing this 
     grad[:] = ipoptm.f_grad_cache
 end
 #eval_f_grad(ipoptm::IpoptManager, x, grad) = (grad[:] = ipoptm.f_grad_cache; println(grad))

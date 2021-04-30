@@ -1,6 +1,6 @@
 @testset "planning" begin
 
-    function planning_test(with_base)
+    function planning_test(with_base, solver)
         urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
         mech = parse_urdf(urdf_path, with_base=with_base)
         joint_names = [
@@ -24,7 +24,7 @@
         width = Kinematics.SVector3f(0.05, 0.05, 0.5)
         boxsdf = BoxSDF(pose, width)
 
-        n_wp = 30
+        n_wp = 10
         q_start = get_joint_angles(mech, joints)
 
         link = find_link(mech, "gripper_link")
@@ -32,17 +32,19 @@
         set_joint_angles(mech, joints, q_goal)
 
         xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-        q_seq, status = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-5)
+        q_seq, status = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-5, solver=solver)
 
-        @test status == :FTOL_REACHED
-
-        for i in 1:n_wp 
-            set_joint_angles(mech, joints, q_seq[:, i])
-            vals = compute_coll_dists(sscc, joints, boxsdf)
-            @test all(vals.>-1e-2, dims=1)[1]
+        if solver==:NLOPT
+            @test status == :FTOL_REACHED
+            for i in 1:n_wp 
+                set_joint_angles(mech, joints, q_seq[:, i])
+                vals = compute_coll_dists(sscc, joints, boxsdf)
+                @test all(vals.>-1e-2, dims=1)[1]
+            end
         end
     end
-
-    planning_test(true)
-    planning_test(false)
+    for solver in [:NLOPT, :IPOPT]
+        planning_test(true, solver)
+        planning_test(false, solver)
+    end
 end
