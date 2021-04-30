@@ -142,7 +142,12 @@ function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqCon
 end
 
 eval_f(ipoptm::IpoptManager, x) = ipoptm.objective(x, ipoptm.f_grad_cache)
-eval_f_grad(ipoptm::IpoptManager, x, grad) = (grad[:] = ipoptm.f_grad_cache)
+function eval_f_grad(ipoptm::IpoptManager, x, grad)
+    eval_f(ipoptm, x) # TODO ad hoc
+    @warn "please remove this eval_f."
+    grad[:] = ipoptm.f_grad_cache
+end
+#eval_f_grad(ipoptm::IpoptManager, x, grad) = (grad[:] = ipoptm.f_grad_cache; println(grad))
 function eval_g(ipoptm::IpoptManager, x, val_vec)
     n_cons_total = ipoptm.eqconst.n_cons + ipoptm.ineqconst.n_cons
     n_decision = ipoptm.eqconst.n_dof * ipoptm.eqconst.n_wp
@@ -170,7 +175,7 @@ function eval_g_jac(ipoptm::IpoptManager, x, mode, rows, cols, values)
 end
 
 function create_problem(ipoptm::IpoptManager)
-    infty = 1e-10
+    infty = 1e10
     n = ipoptm.ineqconst.n_dof * ipoptm.ineqconst.n_wp
     x_L = [-infty for _ in 1:n]
     x_U = [infty for _ in 1:n]
@@ -191,7 +196,7 @@ function create_problem(ipoptm::IpoptManager)
     _eval_h = nothing
     prob = createProblem(n, x_L, x_U, m, g_L, g_U, nelem_jac, nelem_hess, _eval_f, _eval_g, _eval_f_grad, _eval_g_jac, _eval_h)
     addOption(prob, "hessian_approximation", "limited-memory")
-    addOption(prob, "print_level", 10) # 1 ~ 12; 12 is most verbose
+    addOption(prob, "print_level", 3) # 1 ~ 12; 12 is most verbose
     return prob
 end
 
@@ -251,6 +256,8 @@ function plan_trajectory(
         prob = create_problem(ipoptm)
         prob.x = xi_init
         status = solveProblem(prob)
+        ret = status
+        xi_solved = prob.x
     else
         error("not an available solver")
     end
