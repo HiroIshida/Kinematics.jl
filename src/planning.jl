@@ -65,32 +65,63 @@ function (this::IneqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat:
     end
 end
 
+abstract type PartialConstraint end
+
+struct ConfigurationConstraint <: PartialConstraint
+    idx_wp::Int
+    n_dof::Int
+    n_cons::Int
+    q_const::Vector{Float64}
+end
+function ConfigurationConstraint(idx_wp, n_dof, q_const)
+    n_cons = n_dof
+    ConfigurationConstraint(idx_wp, n_dof, n_cons, q_const)
+end
+
+function (this::ConfigurationConstraint)(q::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
+    j_start = 1 + (this.idx_wp - 1) * this.n_dof
+    j_end = j_start + this.n_dof - 1
+    jac_mat[j_start:j_end, :] = -Matrix{Float64}(I, this.n_dof, this.n_dof)
+    val_vec[:] = this.q_const - q
+end
+
 mutable struct EqConst <: Constraint
     n_dof::Int
     n_wp::Int
     n_cons::Int
-    q_start::Vector{Float64}
-    q_goal::Vector{Float64}
+    cons_arr::Vector{PartialConstraint}
 
     # uesd only in NLOPT
     jac_mat::Matrix{Float64}
     val_vec::Vector{Float64}
 end
-function EqConst(n_dof, n_wp, q_start, q_goal)
+
+function EqConst(n_wp, cons_arr::Vector{PartialConstraint})
+    @debugassert all(y->y==cons_arr[1].n_dof, (c.n_dof for c in cons_arr))
+    n_dof = cons_arr[1].n_dof
+    n_cons = sum((c.n_cons for c in cons_arr))
+
     n_cons = n_dof * 2
     n_whole = n_dof * n_wp
     jac_mat = zeros(n_whole, n_cons)
     val_vec = zeros(n_cons)
-    EqConst(n_dof, n_wp, n_cons, q_start, q_goal, jac_mat, val_vec)
+    EqConst(n_dof, n_wp, n_cons, cons_arr, jac_mat, val_vec)
 end
 
 function (this::EqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
     n_dof, n_wp = this.n_dof, this.n_wp
     xi_reshaped = reshape(xi, (n_dof, n_wp))
-    jac_mat[1:n_dof, 1:n_dof] = -Matrix{Float64}(I, n_dof, n_dof)
-    jac_mat[end-n_dof+1:end, n_dof+1:end] = -Matrix{Float64}(I, n_dof, n_dof)
-    val_vec[1:n_dof] = this.q_start - xi_reshaped[:, 1]
-    val_vec[n_dof+1:end] = this.q_goal - xi_reshaped[:, end]
+
+    i_end = 0
+    for cons in this.cons_arr
+        i_start = i_end + 1
+        i_end = i_start + cons.n_cons - 1 # must followed after i_start!
+
+        q_partial = @view xi_reshaped[:, cons.idx_wp]
+        val_vec_partial = @view val_vec[i_start:i_end] 
+        jac_mat_partial = @view jac_mat[:, i_start:i_end]
+        cons(q_partial, val_vec_partial, jac_mat_partial)
+    end
 end
 
 function nloptize(cons::Constraint)
@@ -213,9 +244,13 @@ function construct_problem(
         )
     n_whole = n_dof * n_wp
 
+    eq_cons_arr = PartialConstraint[]
+    push!(eq_cons_arr, ConfigurationConstraint(1, n_dof, q_start))
+    push!(eq_cons_arr, ConfigurationConstraint(n_wp, n_dof, q_goal))
+
     F = Objective(n_wp, ones(n_dof))
     G = IneqConst(sscc, joints, sdf, n_wp)
-    H = EqConst(n_dof, n_wp, q_start, q_goal)
+    H = EqConst(n_wp, eq_cons_arr)
     return F, G, H, n_whole
 
 end
