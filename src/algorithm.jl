@@ -130,19 +130,23 @@ function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vec
     return angles
 end
 
-function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{<:Joint}, point_desired::SVector3f; ftol=1e-3)
+function inverse_kinematics!(m::Mechanism, link::Link, joints::Vector{<:Joint}, target_pose::Transform; ftol=1e-3, with_rot=true)
     n_dof = length(joints) + (m.with_base ? 3 : 0)
-    jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
+    n_rows = (with_rot ? 6 : 3)
+    jac = zero(SizedMatrix{n_rows, n_dof, Float64}) # pre allocate this
 
     function f_objective(angles::Vector, grad::Vector)
         set_joint_angles(m, joints, angles)
-        point_now = translation(get_transform(m, link))
-        point_diff = point_desired - point_now
+        pose_now = get_transform(m, link)
+        point_diff = translation(target_pose) - translation(pose_now)
+        rpy_diff = rpy(target_pose) - rpy(pose_now)
+        pose_diff = (with_rot ? vcat(point_diff, rpy_diff) : point_diff)
 
-        get_jacobian!(m, link, joints, false, jac)
-        grad_ = - 2 * transpose(jac) * point_diff
+        get_jacobian!(m, link, joints, with_rot, jac; rpy_jac=true)
+        grad_ = -2 * transpose(jac) * pose_diff
+
         length(grad) > 0 && copy!(grad, grad_)
-        return sum(point_diff.^2)
+        return sum(pose_diff.^2)
     end
 
     angles_current = get_joint_angles(m, joints)

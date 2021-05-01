@@ -46,7 +46,7 @@ export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle, set_joint_angles, is_relevant, get_joint_angles!, get_joint_angles, add_new_link
 
 # from algorithm.jl
-export get_transform, get_jacobian, get_jacobian!, point_inverse_kinematics
+export get_transform, get_jacobian, get_jacobian!, inverse_kinematics!
 
 #from sdf.jl
 export BoxSDF
