@@ -34,10 +34,13 @@ n_wp = 10
 q_start = get_joint_angles(mech, joints)
 
 link = find_link(mech, "gripper_link")
-q_goal = point_inverse_kinematics(mech, link, joints, SVector{3, Float64}(0.3, -0.4, 1.2))
+target_pose = Transform(Kinematics.SVector3f(0.3, -0.4, 1.2))
+q_goal = inverse_kinematics!(mech, link, joints, target_pose; with_rot=false)
 set_joint_angles(mech, joints, q_goal)
 
-q_seq, _ = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp)
+solver = :NLOPT
+xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
+@btime q_seq, status = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-3, solver=solver)
 
 vis = Visualizer()
 add_sdf(vis, boxsdf)
