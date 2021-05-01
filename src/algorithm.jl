@@ -67,10 +67,8 @@ function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Revolute}, tf_wo
     diff = cross(faxis.axis, translation(tf_world_to_link) - faxis.origin)
     mat_out[1:3] = diff
     if with_rot
-        println("with rot")
         if rpy_jac
             rpy_derivative!(rpy(tf_world_to_link), faxis.axis, @view mat_out[4:6])
-            println("hoge")
         else
             mat_out[4:6] = faxis.axis
         end

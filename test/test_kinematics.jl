@@ -63,10 +63,14 @@
                 end
 
                 @test isapprox(J_numerical[1:3, :], J_analytical[1:3, :], atol=1e-5) 
-                @test isapprox(J_numerical[4:6, :], J_analytical[4:6, :], atol=1e-5) 
+               
+                # to avoid euler angle's singularity case
+                if norm((J_numerical[4:6, end-2:end])) < 1e4
+                    @test isapprox(J_numerical[4:6, :], J_analytical[4:6, :], atol=1e-5) 
+                end
             end
         end
     end
     kinematics_test(false)
-    #kinematics_test(true)
+    kinematics_test(true)
 end
