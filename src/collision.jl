@@ -60,7 +60,7 @@ function update(vis::Visualizer, sscc::SweptSphereCollisionChecker)
     end
 end
 
-function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction, 
+function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction, 
         out_vals::AbstractArray{Float64, 1})
     for i in 1:length(sscc.sphere_links)
         link = sscc.sphere_links[i]
@@ -69,14 +69,14 @@ function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{J
     end
 end
 
-function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction)
+function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction)
     n_feature = length(sscc.sphere_links)
     out_vals = Vector{Float64}(undef, n_feature)
     compute_coll_dists!(sscc, joints, sdf, out_vals)
     return out_vals
 end
 
-function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction, 
+function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction, 
         out_vals::AbstractArray{Float64, 1}, out_grads::AbstractArray{Float64, 2}
        )
     n_col = length(sscc.sphere_links)
@@ -103,7 +103,7 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
     end
 end
 
-function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{Joint}, sdf::SignedDistanceFunction) 
+function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction) 
     n_feature = length(sscc.sphere_links)
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     out_vals = Vector{Float64}(undef, n_feature)

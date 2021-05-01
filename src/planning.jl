@@ -207,7 +207,7 @@ end
 
 function construct_problem(
         sscc::SweptSphereCollisionChecker,
-        joints::Vector{Joint},
+        joints::Vector{<:Joint},
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp, n_dof
         )
@@ -222,7 +222,7 @@ end
 
 function plan_trajectory(
         sscc::SweptSphereCollisionChecker,
-        joints::Vector{Joint},
+        joints::Vector{<:Joint},
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;

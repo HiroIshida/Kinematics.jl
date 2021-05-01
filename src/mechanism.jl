@@ -98,7 +98,7 @@ function Base.zero(::Type{FloatingAxis})
     FloatingAxis([0, 0, 0], [1, 0, 0])
 end
 
-function create_rptable(links::Vector{Link}, joints::Vector{Joint})
+function create_rptable(links::Vector{Link}, joints::Vector{<:Joint})
     n_link = length(links)
     n_joint = length(joints)
 
@@ -176,7 +176,7 @@ end
 @inbounds set_joint_angle(m::Mechanism, joint_id::Int, angle) = (m.angles[joint_id] = angle; invalidate_cache!(m))
 @inline set_base_pose(m::Mechanism, vec::AbstractArray) = (m.base_pose = MVector3f(vec); invalidate_cache!(m))
 
-function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
+function get_joint_angles!(m::Mechanism, joints::Vector{<:Joint}, angle_vector)
     n_joints = length(joints)
     @debugassert length(angle_vector) == n_joints + (m.with_base ? 3 : 0)
     for i in 1:n_joints
@@ -189,14 +189,14 @@ function get_joint_angles!(m::Mechanism, joints::Vector{Joint}, angle_vector)
     end
 end
 
-function get_joint_angles(m::Mechanism, joints::Vector{Joint})
+function get_joint_angles(m::Mechanism, joints::Vector{<:Joint})
     n_dof = length(joints) + (m.with_base ? 3 : 0)
     angle_vector = zeros(n_dof)
     get_joint_angles!(m, joints, angle_vector)
     return angle_vector
 end
 
-function set_joint_angles(m::Mechanism, joints::Vector{Joint}, angles)
+function set_joint_angles(m::Mechanism, joints::Vector{<:Joint}, angles)
     @debugassert length(joints) + (m.with_base ? 3 : 0) == length(angles) 
     jangle = (m.with_base ? (@view angles[1:end-3]) : angles)
     for (joint, a) in zip(joints, jangle)

@@ -67,9 +67,9 @@ function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Prismatic}, tf_w
     mat_out[1:3] = faxis.axis
 end
 
-function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
+function get_jacobian!(m::Mechanism, link::Link, joints::Vector{<:Joint},
         with_rot::Bool,
-        mat_out::AbstractMatrix) where J<:Joint
+        mat_out::AbstractMatrix)
     tf_world_to_link = get_transform(m, link)
     n_joint = length(joints)
     for i in 1:n_joint
@@ -89,7 +89,7 @@ function get_jacobian!(m::Mechanism, link::Link, joints::Vector{J},
     end
 end
 
-function get_jacobian(m::Mechanism, link::Link, joints::Vector{Joint}, with_rot::Bool)
+function get_jacobian(m::Mechanism, link::Link, joints::Vector{<:Joint}, with_rot::Bool)
     rows = (with_rot ? 6 : 3)
     cols = (m.with_base ? length(joints) + 3 : length(joints))
     jacobian = zeros(Float64, rows, cols)
@@ -97,7 +97,7 @@ function get_jacobian(m::Mechanism, link::Link, joints::Vector{Joint}, with_rot:
     return jacobian
 end
 
-function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f)
+function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vector{<:Joint}, point_desired::SVector3f)
     n_dof = length(joints)
     jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
     angles = zero(SizedVector{n_dof, Float64})
@@ -114,7 +114,7 @@ function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vec
     return angles
 end
 
-function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{Joint}, point_desired::SVector3f; ftol=1e-3)
+function point_inverse_kinematics(m::Mechanism, link::Link, joints::Vector{<:Joint}, point_desired::SVector3f; ftol=1e-3)
     n_dof = length(joints) + (m.with_base ? 3 : 0)
     jac = zero(SizedMatrix{3, n_dof, Float64}) # pre allocate this
 
