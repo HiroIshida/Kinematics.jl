@@ -1,5 +1,6 @@
 using Kinematics
 using Test 
+using LinearAlgebra
 using Rotations
 using StaticArrays
 import JSON

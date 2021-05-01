@@ -50,20 +50,24 @@
         for angles in [angles1, angles2]
             for link in mech.links
                 set_joint_angles(mech, joints, angles)
-                J_analytical = get_jacobian(mech, link, joints, false)
-                J_numerical = zeros(3, n_dof)
+                J_analytical = get_jacobian(mech, link, joints, true; rpy_jac=true)
+                J_numerical = zeros(6, n_dof)
                 pose0 = get_transform(mech, link)
                 for i in 1:n_dof
                     angles_ = copy(angles)
                     angles_[i] += eps
                     set_joint_angles(mech, joints, angles_)
                     pose1 = get_transform(mech, link)
-                    J_numerical[:, i] = (translation(pose1) - translation(pose0))/eps
+                    J_numerical[1:3, i] = (translation(pose1) - translation(pose0))/eps
+                    J_numerical[4:6, i] = (rpy(pose1) - rpy(pose0))/eps
                 end
 
-                #println("testing..." * link.name)
-                @test isapprox(J_numerical, J_analytical, atol=1e-5) 
-                #println("[PASS] jacobian of " * link.name)
+                @test isapprox(J_numerical[1:3, :], J_analytical[1:3, :], atol=1e-5) 
+               
+                # to avoid euler angle's singularity case
+                if norm((J_numerical[4:6, end-2:end])) < 1e4
+                    @test isapprox(J_numerical[4:6, :], J_analytical[4:6, :], atol=1e-5) 
+                end
             end
         end
     end

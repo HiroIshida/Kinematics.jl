@@ -53,29 +53,45 @@ function _get_joint_axis(m::Mechanism, hjoint::Joint)
     return faxis
 end
 
-function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Revolute}, tf_world_to_link, with_rot, mat_out)
+function rpy_derivative!(rpy::Vector, axis::AbstractVector, out::AbstractVector)
+    a1, a2, a3 = -rpy
+    x, y, z = axis
+    dr_dt = cos(a3)/cos(a2)*x - sin(a3)/cos(a2)*y
+    dp_dt = sin(a3)*x + cos(a3)*y
+    dy_dt = -cos(a3)*sin(a2)/cos(a2)*x + sin(a3)*sin(a2)/cos(a2)*y + z
+    out[:] = [dr_dt, dp_dt, dy_dt]
+end
+
+function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Revolute}, tf_world_to_link, with_rot, mat_out; rpy_jac=false)
     faxis = _get_joint_axis(m, joint)
     diff = cross(faxis.axis, translation(tf_world_to_link) - faxis.origin)
     mat_out[1:3] = diff
     if with_rot
-        mat_out[4:6] = faxis.axis
+        if rpy_jac
+            rpy_derivative!(rpy(tf_world_to_link), faxis.axis, @view mat_out[4:6])
+        else
+            mat_out[4:6] = faxis.axis
+        end
     end
 end
 
-function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Prismatic}, tf_world_to_link, with_rot, mat_out)
+function joint_jacobian!(m::Mechanism, link::Link, joint::Joint{Prismatic}, tf_world_to_link, with_rot, mat_out; rpy_jac=false)
     faxis = _get_joint_axis(m, joint)
     mat_out[1:3] = faxis.axis
 end
 
 function get_jacobian!(m::Mechanism, link::Link, joints::Vector{<:Joint},
         with_rot::Bool,
-        mat_out::AbstractMatrix)
+        mat_out::AbstractMatrix
+        ;
+        rpy_jac=false
+    )
     tf_world_to_link = get_transform(m, link)
     n_joint = length(joints)
     for i in 1:n_joint
         joint = joints[i]
         if is_relevant(m, joint, link)
-            joint_jacobian!(m, link, joint, tf_world_to_link, with_rot, @view mat_out[:, i])
+            joint_jacobian!(m, link, joint, tf_world_to_link, with_rot, @view mat_out[:, i]; rpy_jac=rpy_jac)
         end
     end
 
@@ -89,11 +105,11 @@ function get_jacobian!(m::Mechanism, link::Link, joints::Vector{<:Joint},
     end
 end
 
-function get_jacobian(m::Mechanism, link::Link, joints::Vector{<:Joint}, with_rot::Bool)
+function get_jacobian(m::Mechanism, link::Link, joints::Vector{<:Joint}, with_rot::Bool; rpy_jac=false)
     rows = (with_rot ? 6 : 3)
     cols = (m.with_base ? length(joints) + 3 : length(joints))
     jacobian = zeros(Float64, rows, cols)
-    get_jacobian!(m, link, joints, with_rot, jacobian)
+    get_jacobian!(m, link, joints, with_rot, jacobian; rpy_jac=rpy_jac)
     return jacobian
 end
 
