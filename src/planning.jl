@@ -242,15 +242,27 @@ function plan_trajectory(
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
     F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
 
+    joint_lower_limits = [lower_limit(j) for j in joints]
+    joint_upper_limits = [upper_limit(j) for j in joints]
+    if sscc.mech.with_base
+        append!(joint_lower_limits, -[Inf, Inf, Inf])
+        append!(joint_upper_limits, [Inf, Inf, Inf])
+    end
+    lower_bounds = vcat([joint_lower_limits for i in 1:n_wp]...)
+    upper_bounds = vcat([joint_upper_limits for i in 1:n_wp]...)
+
     if solver==:NLOPT
         opt = Opt(:LD_SLSQP, n_whole)
         opt.min_objective = (x::Vector, grad::Vector) -> F(x, grad)
-        inequality_constraint!(opt, nloptize(G), [1e-8 for _ in 1:G.n_cons])
-        equality_constraint!(opt, nloptize(H), [1e-8 for _ in 1:H.n_cons])
+        opt.lower_bounds = lower_bounds
+        opt.upper_bounds = upper_bounds
+        inequality_constraint!(opt, nloptize(G), [1e-3 for _ in 1:G.n_cons])
+        equality_constraint!(opt, nloptize(H), [1e-3 for _ in 1:H.n_cons])
         opt.ftol_abs = ftol_abs
         minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
         ret == :FORCED_STOP && error("nlopt forced stop")
     elseif solver==:IPOPT
+        @warn "Solving via IPOPT is still an experimetal feature."
         ipoptm = IpoptManager(F, G, H)
         prob = create_problem(ipoptm)
         prob.x = xi_init
