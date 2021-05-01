@@ -39,7 +39,7 @@ include("visual.jl")
 include("collision.jl")
 include("planning.jl")
 
-export Transform, rotation, translation
+export Transform, rotation, translation, rpy
 export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache, extend!
 export PseudoStack
 export parse_urdf
