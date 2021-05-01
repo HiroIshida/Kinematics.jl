@@ -130,7 +130,7 @@ function point_inverse_kinematics_nakamura(m::Mechanism, link::Link, joints::Vec
     return angles
 end
 
-function inverse_kinematics!(m::Mechanism, link::Link, joints::Vector{<:Joint}, target_pose::Transform; ftol=1e-3, with_rot=true)
+function inverse_kinematics!(m::Mechanism, link::Link, joints::Vector{<:Joint}, target_pose::Transform; ftol=1e-5, with_rot=true)
     n_dof = length(joints) + (m.with_base ? 3 : 0)
     n_rows = (with_rot ? 6 : 3)
     jac = zero(SizedMatrix{n_rows, n_dof, Float64}) # pre allocate this
