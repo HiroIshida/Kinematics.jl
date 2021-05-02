@@ -77,7 +77,7 @@ function compute_coll_dists(sscc::SweptSphereCollisionChecker, joints::Vector{<:
 end
 
 function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction, 
-        out_vals::AbstractArray{Float64, 1}, out_grads::AbstractArray{Float64, 2}
+        out_vals::AbstractArray{Float64, 1}, out_grads::AbstractArray{Float64, 2}; truncation_dist=0.1
        )
     n_col = length(sscc.sphere_links)
     eps = 1e-7
@@ -90,24 +90,31 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
     for i in 1:n_col
         link = sscc.sphere_links[i]
         pt0 = translation(get_transform(sscc.mech, link))
-        out_vals[i] = sdf(pt0)
+        dist0 = sdf(pt0) - sscc.sphere_radii[i]
+        out_vals[i] = dist0
 
-        for j in 1:3
-            copy!(pt1, pt0)
-            pt1[j] += eps
-            grad[j] = (sdf(pt1) - out_vals[i])/eps
+        if dist0 > truncation_dist
+            out_vals[i] = truncation_dist
+            out_grads[:, i] .= 0.0
+        else
+            out_vals[i] = dist0
+            for j in 1:3
+                copy!(pt1, pt0)
+                pt1[j] += eps
+                dist1 = sdf(pt1) - sscc.sphere_radii[i]
+                grad[j] = (dist1 - dist0)/eps
+            end
+            get_jacobian!(sscc.mech, link, joints, false, jac)
+            out_grads[:, i] = transpose(grad) * jac
         end
-        get_jacobian!(sscc.mech, link, joints, false, jac)
-        out_grads[:, i] = transpose(grad) * jac
-        out_vals[i] -= sscc.sphere_radii[i]
     end
 end
 
-function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction) 
+function compute_coll_dists_and_grads(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::SignedDistanceFunction; truncation_dist=0.1) 
     n_feature = length(sscc.sphere_links)
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     out_vals = Vector{Float64}(undef, n_feature)
     out_grads = Array{Float64}(undef, n_dof, n_feature)
-    compute_coll_dists_and_grads!(sscc, joints, sdf, out_vals, out_grads)
+    compute_coll_dists_and_grads!(sscc, joints, sdf, out_vals, out_grads; truncation_dist=truncation_dist)
     return out_vals, out_grads
 end

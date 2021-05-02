@@ -53,12 +53,13 @@ function IneqConst(sscc::SweptSphereCollisionChecker, joints, sdf, n_wp, margin)
 end
 
 function (this::IneqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
+    truncation_dist = this.margin + 0.05
     n_dof, n_wp, n_coll, n_cons = this.n_dof, this.n_wp, this.n_coll, this.n_cons
     xi_reshaped = reshape(xi, (n_dof, n_wp))
     for i in 1:n_wp
         angles = xi_reshaped[:, i]
         set_joint_angles(this.sscc.mech, this.joints, angles)
-        dists, grads = compute_coll_dists_and_grads(this.sscc, this.joints, this.sdf)
+        dists, grads = compute_coll_dists_and_grads(this.sscc, this.joints, this.sdf; truncation_dist=truncation_dist)
 
         # jac_mat has a block diagonal structure # TODO use BlockArray?
         jac_mat[1+n_dof*(i-1):n_dof*i, 1+n_coll*(i-1):n_coll*i] = grads
