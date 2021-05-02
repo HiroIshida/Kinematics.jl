@@ -3,6 +3,7 @@ module Kinematics
 using PyCall
 const __skrobot__ = PyCall.PyNULL()
 const __trimesh__ = PyCall.PyNULL()
+const __scipyopt__ = PyCall.PyNULL()
 
 using Rotations
 using StaticArrays
@@ -71,6 +72,11 @@ export __skrobot__
 function __init__()
     copy!(__skrobot__, pyimport("skrobot"))
     copy!(__trimesh__, pyimport("trimesh"))
+    try
+        copy!(__scipyopt__, pyimport("scipy.optimize")) # optional
+    catch e
+        @warn "Couldn't import scipy"
+    end
 end
 
 end

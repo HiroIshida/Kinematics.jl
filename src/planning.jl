@@ -100,7 +100,6 @@ end
 function PoseConstraint(idx_wp::Int, n_dof::Int, 
         move_links::Vector{Link}, target_poses::Vector{Transform}, with_rots::Vector{Bool}, 
         mech::Mechanism, joints::Vector{<:Joint})
-
     n_cons = sum((pred ? 6 : 3) for pred in with_rots)
     PoseConstraint(idx_wp, n_dof, n_cons, move_links, target_poses, with_rots, mech, joints)
 end
@@ -184,6 +183,26 @@ function nloptize(cons::Constraint)
     return inner
 end
 
+function scipynize(objective::Objective)
+    # TODO avoid using closure!
+    grad::Vector{Float64} = zeros(objective.n_dim)
+    function inner_val(xi::Vector)
+        val = objective(xi, grad)
+        return val
+    end
+    inner_grad(xi::Vector) = (grad) # return cached
+    return inner_val, inner_grad
+end
+
+function scipynize(cons::Constraint)
+    function inner_val(xi::Vector)
+        cons(xi, cons.val_vec, cons.jac_mat)
+        return cons.val_vec
+    end
+    inner_jac(xi::Vector) = (transpose(cons.jac_mat))
+    return inner_val, inner_jac
+end
+
 mutable struct IpoptManager
     objective::Objective
     ineqconst::IneqConst
@@ -198,7 +217,7 @@ end
 function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqConst) 
     n_cons_total = eqconst.n_cons + ineqconst.n_cons
     n_decision = eqconst.n_dof * eqconst.n_wp
-    jac_mat = ones(n_decision, n_cons_total) * Inf # actually, transponse of jac
+    jac_mat = ones(n_decision, n_cons_total) * Inf # actually, transpose of jac
     
     # adhoc
     jac_mat_ineq = @view jac_mat[:, 1:ineqconst.n_cons]
@@ -360,6 +379,16 @@ function plan_trajectory(
         status = solveProblem(prob)
         ret = status
         xi_solved = prob.x
+    elseif solver==:SCIPY
+        f, df = scipynize(F)
+        g, dg = scipynize(G)
+        h, dh = scipynize(H)
+        options = Dict("ftol"=>ftol_abs)
+        ineqdict = Dict("type"=>"ineq", "fun"=>g, "jac"=>dg)
+        eqdict = Dict("type"=>"eq", "fun"=>h, "jac"=>dh)
+        constraints = [ineqdict, eqdict]
+        ret = __scipyopt__.minimize(f, xi_init, method="SLSQP", constraints=constraints, options=options)
+        xi_solved = ret["x"]
     else
         error("not an available solver")
     end
