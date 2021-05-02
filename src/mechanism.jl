@@ -176,6 +176,7 @@ end
 @inline find_link(m::Mechanism, link_name) = m.links[m.linkid_map[link_name]]
 @inline isroot(link::Link) = (link.plink_id==-1)
 @inline isleaf(link::Link) = (isempty(link.clink_ids))
+@inline name(m::Mechanism) = m.robot_type.name
 
 @inbounds @inline joint_angle(m::Mechanism, joint::Joint) = m.angles[joint.id]
 

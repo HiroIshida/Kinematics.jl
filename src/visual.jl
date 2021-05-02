@@ -7,7 +7,7 @@ create_vis_sphere(radius) = (HyperSphere(Point(0, 0, 0.), radius))
 
 function update(vis::Visualizer, mech::Mechanism)
     for link in mech.links
-        update(vis, mech, link)
+        update(vis[name(mech)], mech, link)
     end
     nothing
 end
@@ -28,7 +28,7 @@ end
 
 function add_mechanism(vis::Visualizer, mech::Mechanism)
     for link in mech.links
-        add_link(vis, link)
+        add_link(vis[name(mech)], link)
         update(vis, mech, link)
     end
     nothing
