@@ -207,7 +207,7 @@ function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqCon
     val_dummy_ineq = ones(ineqconst.n_cons)
     val_dummy_eq = ones(eqconst.n_cons)
 
-    ineqconst(x_dummy, val_dummy_ineq, jac_mat_ineq, margin)
+    ineqconst(x_dummy, val_dummy_ineq, jac_mat_ineq)
     eqconst(x_dummy, val_dummy_eq, jac_mat_eq)
     idxes = Tuple{Int, Int}[]
     for j in 1:size(jac_mat, 1)
