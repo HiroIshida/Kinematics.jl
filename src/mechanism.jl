@@ -122,7 +122,11 @@ function create_rptable(links::Vector{Link}, joints::Vector{<:Joint})
     return table
 end
 
-mutable struct Mechanism
+abstract type RobotType end
+struct Basic <: RobotType end
+
+mutable struct Mechanism{RT<:RobotType}
+    robot_type::RT
     links::Vector{Link}
     joints::Vector{Joint}
     linkid_map::Dict{String, Int}
@@ -140,7 +144,7 @@ mutable struct Mechanism
     link_id_stack::PseudoStack{Int64}
     tf_stack::PseudoStack{Transform}
 end
-function Mechanism(links, joints, linkid_map, jointid_map, with_base)
+function Mechanism(links, joints, linkid_map, jointid_map, with_base, robot_type::RT) where RT<:RobotType
     n_links = length(links)
     n_joints = length(joints)
     tf_cache = CacheVector(n_links, zero(Transform)) # TODO should be zero -> one
@@ -152,7 +156,7 @@ function Mechanism(links, joints, linkid_map, jointid_map, with_base)
     angles = zeros(length(joints))
     link_id_stack = PseudoStack(Int64, n_links)
     tf_stack = PseudoStack(Transform, n_links)
-    Mechanism(links, joints, linkid_map, jointid_map,
+    Mechanism{RT}(robot_type, links, joints, linkid_map, jointid_map,
         tf_cache, axis_cache,
         angles, base_pose, with_base, rptable, link_id_stack, tf_stack)
 end
