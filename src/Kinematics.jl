@@ -63,7 +63,7 @@ export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_s
 export create_straight_trajectory, plan_trajectory, PoseConstraint, ConfigurationConstraint
 
 # from models.jl
-export load_pr2, rarm_joints, larm_joints, rarm_collision_links, larm_collision_links
+export load_pr2, rarm_joints, larm_joints, rarm_collision_links, larm_collision_links, reset_manip_pose
 
 # other stuff
 export __skrobot__

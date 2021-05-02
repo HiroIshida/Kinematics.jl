@@ -8,7 +8,7 @@ function load_pr2(;with_base=false)
     parse_urdf(urdf_path, with_base=with_base, robot_type=PR2())
 end
 
-torso_joint(mech::Mechanism{PR2}) = (find_joint(mech, "torso_lift_join"))
+torso_joint(mech::Mechanism{PR2}) = (find_joint(mech, "torso_lift_joint"))
 
 function rarm_joints(mech::Mechanism{PR2}; with_torso=false)
     rarm_joint_names = ["r_shoulder_pan_joint", 
@@ -54,4 +54,18 @@ function larm_collision_links(mech::Mechanism{PR2})
                             "l_gripper_l_finger_link"]
     links = [find_link(mech, name) for name in larm_coll_link_names]
     return links
+end
+
+function reset_manip_pose(mech::Mechanism{PR2})
+    rarm_angles = deg2rad.([-75., 50., -110., -110, 20, -10, -10])
+    larm_angles = deg2rad.([75., 50., 110., -110., -20., -10., -10])
+    torso_angle = 0.3
+
+    joints = vcat(rarm_joints(mech), larm_joints(mech), torso_joint(mech))
+    av = vcat(rarm_angles, larm_angles, torso_angle)
+    println(av)
+    if mech.with_base
+        append!(av, zeros(3))
+    end
+    set_joint_angles(mech, joints, av)
 end
