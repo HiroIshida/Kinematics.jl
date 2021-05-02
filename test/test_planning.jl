@@ -44,7 +44,7 @@
             end
         end
     end
-    for solver in [:NLOPT, :IPOPT]
+    for solver in [:NLOPT, :IPOPT, :SCIPY]
         planning_test(true, solver)
         planning_test(false, solver)
     end
