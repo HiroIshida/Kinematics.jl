@@ -37,18 +37,19 @@ mutable struct IneqConst <: Constraint
     n_dof::Int
     n_coll::Int
     n_cons::Int
+    margin::Float64
 
     # uesd only in NLOPT
     jac_mat::Matrix{Float64}
     val_vec::Vector{Float64}
 end
-function IneqConst(sscc::SweptSphereCollisionChecker, joints, sdf, n_wp)
+function IneqConst(sscc::SweptSphereCollisionChecker, joints, sdf, n_wp, margin)
     n_dof = length(joints) + (sscc.mech.with_base ? 3 : 0)
     n_coll = length(sscc.sphere_links)
     n_cons = n_coll * n_wp
     jac_mat = zeros(n_dof * n_wp, n_cons)
     val_vec = zeros(n_cons)
-    return IneqConst(sscc, joints, sdf, n_wp, n_dof, n_coll, n_cons, jac_mat, val_vec)
+    return IneqConst(sscc, joints, sdf, n_wp, n_dof, n_coll, n_cons, margin, jac_mat, val_vec)
 end
 
 function (this::IneqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
@@ -61,7 +62,7 @@ function (this::IneqConst)(xi::AbstractVector, val_vec::AbstractVector, jac_mat:
 
         # jac_mat has a block diagonal structure # TODO use BlockArray?
         jac_mat[1+n_dof*(i-1):n_dof*i, 1+n_coll*(i-1):n_coll*i] = grads
-        val_vec[1+n_coll*(i-1):n_coll*i] = dists
+        val_vec[1+n_coll*(i-1):n_coll*i] = dists .- this.margin
     end
 end
 
@@ -206,7 +207,7 @@ function IpoptManager(objective::Objective, ineqconst::IneqConst, eqconst::EqCon
     val_dummy_ineq = ones(ineqconst.n_cons)
     val_dummy_eq = ones(eqconst.n_cons)
 
-    ineqconst(x_dummy, val_dummy_ineq, jac_mat_ineq)
+    ineqconst(x_dummy, val_dummy_ineq, jac_mat_ineq, margin)
     eqconst(x_dummy, val_dummy_eq, jac_mat_eq)
     idxes = Tuple{Int, Int}[]
     for j in 1:size(jac_mat, 1)
@@ -290,9 +291,9 @@ function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{<:Joint},
         sdf::SignedDistanceFunction,
-        q_start, q_goal, n_wp, n_dof
+        q_start, q_goal, n_wp, n_dof, margin
         ;
-        partial_consts=partial_consts
+        partial_consts=[],
         )
     n_whole = n_dof * n_wp
 
@@ -302,7 +303,7 @@ function construct_problem(
     append!(eq_cons_arr, partial_consts)
 
     F = Objective(n_wp, ones(n_dof))
-    G = IneqConst(sscc, joints, sdf, n_wp)
+    G = IneqConst(sscc, joints, sdf, n_wp, margin)
     H = EqConst(n_wp, eq_cons_arr)
     return F, G, H, n_whole
 
@@ -314,6 +315,7 @@ function plan_trajectory(
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;
+        margin=2e-2,
         partial_consts=Vector{PartialConstraint}(),
         ftol_abs=1e-3,
         solver=:NLOPT
@@ -329,7 +331,7 @@ function plan_trajectory(
     @assert all(compute_coll_dists(sscc, joints, sdf) .> 0.0, dims=1)[1]
 
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
-    F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof; partial_consts=partial_consts)
+    F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof, margin; partial_consts=partial_consts)
 
     joint_lower_limits = [lower_limit(j) for j in joints]
     joint_upper_limits = [upper_limit(j) for j in joints]
@@ -345,8 +347,8 @@ function plan_trajectory(
         opt.min_objective = (x::Vector, grad::Vector) -> F(x, grad)
         opt.lower_bounds = lower_bounds
         opt.upper_bounds = upper_bounds
-        inequality_constraint!(opt, nloptize(G), [1e-3 for _ in 1:G.n_cons])
-        equality_constraint!(opt, nloptize(H), [1e-3 for _ in 1:H.n_cons])
+        inequality_constraint!(opt, nloptize(G), [1e-8 for _ in 1:G.n_cons])
+        equality_constraint!(opt, nloptize(H), [1e-8 for _ in 1:H.n_cons])
         opt.ftol_abs = ftol_abs
         minf, xi_solved, ret = NLopt.optimize(opt, xi_init)
         ret == :FORCED_STOP && error("nlopt forced stop")
