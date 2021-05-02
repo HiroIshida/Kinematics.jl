@@ -85,6 +85,57 @@ function (this::ConfigurationConstraint)(q::AbstractVector, val_vec::AbstractVec
     val_vec[:] = this.q_const - q
 end
 
+struct PoseConstraint <: PartialConstraint
+    idx_wp::Int
+    n_dof::Int
+    n_cons::Int
+    move_links::Vector{Link}
+    target_poses::Vector{Transform}
+    with_rots::Vector{Bool}
+    mech::Mechanism
+    joints::Vector{Joint}
+end
+
+function PoseConstraint(idx_wp::Int, n_dof::Int, 
+        move_links::Vector{Link}, target_poses::Vector{Transform}, with_rots::Vector{Bool}, 
+        mech::Mechanism, joints::Vector{<:Joint})
+
+    n_cons = sum((pred ? 6 : 3) for pred in with_rots)
+    PoseConstraint(idx_wp, n_dof, n_cons, move_links, target_poses, with_rots, mech, joints)
+end
+
+function PoseConstraint(idx_wp::Int, n_dof::Int, 
+        move_link::Link, target_pose::Transform, with_rot::Bool, 
+        mech::Mechanism, joints::Vector{<:Joint})
+    PoseConstraint(idx_wp, n_dof, [move_link], [target_pose], [with_rot], mech, joints)
+end
+
+function (this::PoseConstraint)(q::AbstractVector, val_vec::AbstractVector, jac_mat::AbstractMatrix)
+    mech = this.mech
+    joints = this.joints
+
+    set_joint_angles(mech, joints, q)
+
+    j_start = 1 + (this.idx_wp - 1) * this.n_dof
+    j_end = j_start + this.n_dof - 1
+
+    i_end = 0
+    for (link, target_pose, with_rot) in zip(this.move_links, this.target_poses, this.with_rots)
+        current_pose = get_transform(mech, link)
+        point_diff = translation(current_pose) - translation(target_pose)
+        rpy_diff = rpy(current_pose) - rpy(target_pose)
+        pose_diff = (with_rot ? vcat(point_diff, rpy_diff) : point_diff)
+
+        dim = (with_rot ? 6 : 3)
+        i_start = i_end + 1
+        i_end = i_start + dim - 1
+
+        val_vec[i_start:i_end] = pose_diff
+        jac = @view jac_mat[j_start:j_end, i_start:i_end]
+        get_jacobian!(this.mech, link, this.joints, with_rot, transpose(jac); rpy_jac=true)
+    end
+end
+
 mutable struct EqConst <: Constraint
     n_dof::Int
     n_wp::Int
@@ -101,7 +152,6 @@ function EqConst(n_wp, cons_arr::Vector{PartialConstraint})
     n_dof = cons_arr[1].n_dof
     n_cons = sum((c.n_cons for c in cons_arr))
 
-    n_cons = n_dof * 2
     n_whole = n_dof * n_wp
     jac_mat = zeros(n_whole, n_cons)
     val_vec = zeros(n_cons)
@@ -241,12 +291,15 @@ function construct_problem(
         joints::Vector{<:Joint},
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp, n_dof
+        ;
+        partial_consts=partial_consts
         )
     n_whole = n_dof * n_wp
 
     eq_cons_arr = PartialConstraint[]
     push!(eq_cons_arr, ConfigurationConstraint(1, n_dof, q_start))
     push!(eq_cons_arr, ConfigurationConstraint(n_wp, n_dof, q_goal))
+    append!(eq_cons_arr, partial_consts)
 
     F = Objective(n_wp, ones(n_dof))
     G = IneqConst(sscc, joints, sdf, n_wp)
@@ -261,6 +314,7 @@ function plan_trajectory(
         sdf::SignedDistanceFunction,
         q_start, q_goal, n_wp
         ;
+        partial_consts=Vector{PartialConstraint}(),
         ftol_abs=1e-3,
         solver=:NLOPT
         )
@@ -275,7 +329,7 @@ function plan_trajectory(
     @assert all(compute_coll_dists(sscc, joints, sdf) .> 0.0, dims=1)[1]
 
     xi_init = create_straight_trajectory(q_start, q_goal, n_wp)
-    F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof)
+    F, G, H, n_whole = construct_problem(sscc, joints, sdf, q_start, q_goal, n_wp, n_dof; partial_consts=partial_consts)
 
     joint_lower_limits = [lower_limit(j) for j in joints]
     joint_upper_limits = [upper_limit(j) for j in joints]

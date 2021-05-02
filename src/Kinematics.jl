@@ -58,7 +58,7 @@ export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add
 export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_sdf
 
 # from planning.jl
-export cost_metric_matrix, create_straight_trajectory, plan_trajectory
+export create_straight_trajectory, plan_trajectory, PoseConstraint, ConfigurationConstraint
 
 # other stuff
 export __skrobot__
