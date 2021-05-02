@@ -123,7 +123,10 @@ function create_rptable(links::Vector{Link}, joints::Vector{<:Joint})
 end
 
 abstract type RobotType end
-struct Basic <: RobotType end
+struct Basic <: RobotType
+    name::Symbol
+end
+Basic() = Basic(:basic)
 
 mutable struct Mechanism{RT<:RobotType}
     robot_type::RT

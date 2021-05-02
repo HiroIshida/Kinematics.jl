@@ -1,4 +1,7 @@
-struct PR2 <: RobotType end
+struct PR2 <: RobotType
+    name::Symbol
+end
+PR2() = PR2(:PR2)
 
 function load_pr2(;with_base=false)
     urdf_path = Kinematics.__skrobot__.data.pr2_urdfpath()
