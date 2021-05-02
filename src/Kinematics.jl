@@ -38,6 +38,7 @@ include("sdf.jl")
 include("visual.jl")
 include("collision.jl")
 include("planning.jl")
+include("models.jl")
 
 export Transform, rotation, translation, rpy
 export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache, extend!
@@ -59,6 +60,9 @@ export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_s
 
 # from planning.jl
 export create_straight_trajectory, plan_trajectory, PoseConstraint, ConfigurationConstraint
+
+# from models.jl
+export load_pr2, rarm_joints, larm_joints, rarm_collision_links, larm_collision_links
 
 # other stuff
 export __skrobot__

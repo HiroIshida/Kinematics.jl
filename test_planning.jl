@@ -7,52 +7,37 @@ using MeshCat
 
 with_base = true
 
-urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
-mech = parse_urdf(urdf_path, with_base=with_base)
-joint_names = [
-        "torso_lift_joint",
-        "shoulder_pan_joint",
-        "shoulder_lift_joint",
-        "upperarm_roll_joint",
-        "elbow_flex_joint",
-        "forearm_roll_joint",
-        "wrist_flex_joint",
-        "wrist_roll_joint"];
-joints = [find_joint(mech, name) for name in joint_names]
+robot = load_pr2(with_base=with_base)
+joints = rarm_joints(robot)
+collision_links = rarm_collision_links(robot)
+sscc = SweptSphereCollisionChecker(robot)
+for link in collision_links
+    add_coll_links(sscc, link)
+end
 
-sscc = SweptSphereCollisionChecker(mech)
-add_coll_links(sscc, find_link(mech, "wrist_flex_link"))
-add_coll_links(sscc, find_link(mech, "torso_lift_link"))
-add_coll_links(sscc, find_link(mech, "upperarm_roll_link"))
-add_coll_links(sscc, find_link(mech, "elbow_flex_link"))
+q_start = [0.564, 0.35, -0.74, -0.7, -0.7, -0.17, -0.63]
+q_goal = [-0.78,  0.055, -1.34, -0.594, -0.494, -0.20, 1.88]
+if with_base
+    append!(q_start, zeros(3))
+    append!(q_goal, zeros(3))
+end
 
-pose = Transform(Kinematics.SVector3f(0.7, -0.25, 0.7))
-width = Kinematics.SVector3f(0.3, 0.3, 0.5)
-boxsdf = BoxSDF(pose, width)
+box_pose = Transform(Kinematics.SVector3f(0.9, -0.2, 0.9))
+box_width = Kinematics.SVector3f(0.7, 0.5, 0.6)
+box_sdf = BoxSDF(box_pose, box_width)
 
 n_wp = 10
-q_start = get_joint_angles(mech, joints)
-
-link = find_link(mech, "gripper_link")
-target_pose = Transform(Kinematics.SVector3f(0.7, -0.6, 0.8))
-q_goal = inverse_kinematics!(mech, link, joints, target_pose; with_rot=false)
-set_joint_angles(mech, joints, q_goal)
-
-solver = :NLOPT
-xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)
-n_dof = length(joints) + (with_base ? 3 : 0)
-waypoint = Transform(Kinematics.SVector3f(0.5, -0.25, 1.2))
-pc = PoseConstraint(7, n_dof, link, waypoint, false, mech, joints)
-@time q_seq, status = plan_trajectory(sscc, joints, boxsdf, q_start, q_goal, n_wp, ftol_abs=1e-6, solver=solver, partial_consts=[])
+margin = 0.03
+@time q_seq, status = plan_trajectory(sscc, joints, box_sdf, q_start, q_goal, n_wp, ftol_abs=1.0e-4, solver=:NLOPT, partial_consts=[], margin=margin)
 
 vis = Visualizer()
-add_frame(vis[:target], target_pose)
-add_frame(vis[:waypoint], waypoint)
-add_sdf(vis, boxsdf)
-add_mechanism(vis, mech)
+#add_frame(vis[:target], target_pose)
+#add_frame(vis[:waypoint], waypoint)
+add_sdf(vis, box_sdf)
+add_mechanism(vis, robot)
 open(vis)
 for i in 1:n_wp
     sleep(0.6)
-    set_joint_angles(mech, joints, q_seq[:, i])
-    update(vis, mech)
+    set_joint_angles(robot, joints, q_seq[:, i])
+    update(vis, robot)
 end
