@@ -98,12 +98,7 @@ function compute_coll_dists_and_grads!(sscc::SweptSphereCollisionChecker, joints
             out_grads[:, i] .= 0.0
         else
             out_vals[i] = dist0
-            for j in 1:3
-                copy!(pt1, pt0)
-                pt1[j] += eps
-                dist1 = sdf(pt1) - sscc.sphere_radii[i]
-                grad[j] = (dist1 - dist0)/eps
-            end
+            gradient!(sdf, pt0, grad)
             get_jacobian!(sscc.mech, link, joints, false, jac)
             out_grads[:, i] = transpose(grad) * jac
         end
