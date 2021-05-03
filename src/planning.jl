@@ -32,7 +32,7 @@ abstract type Constraint end
 mutable struct IneqConst <: Constraint
     sscc::SweptSphereCollisionChecker
     joints::Vector{Joint}
-    sdf::SignedDistanceFunction
+    sdf::AbstractSDF
     n_wp::Int
     n_dof::Int
     n_coll::Int
@@ -310,7 +310,7 @@ end
 function construct_problem(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{<:Joint},
-        sdf::SignedDistanceFunction,
+        sdf::AbstractSDF,
         q_start, q_goal, n_wp, n_dof, margin
         ;
         partial_consts=[],
@@ -332,7 +332,7 @@ end
 function plan_trajectory(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{<:Joint},
-        sdf::SignedDistanceFunction,
+        sdf::AbstractSDF,
         q_start, q_goal, n_wp
         ;
         margin=2e-2,
