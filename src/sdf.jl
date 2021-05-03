@@ -1,8 +1,11 @@
-mutable struct SdfLink <: LinkType end
+mutable struct SdfLink <: LinkType end # TODO ?? 
 
 abstract type AttachStyle end
-struct IsAttached <: AttachStyle end
 struct IsStandAlone <: AttachStyle end
+struct IsAttached <: AttachStyle
+    link::Link
+    mech::Mechanism
+end
 
 abstract type AbstractSDF{AS<:AttachStyle} end
 
@@ -20,15 +23,12 @@ function gradient!(sdf::AbstractSDF, p::StaticVector{3, <:AbstractFloat}, out_gr
 end
 
 function attach_to_link(sdf::AbstractSDF{IsAttached}, mech::Mechanism, parent_link::Link)
-    new_link = Link(SdfLink, sdf.name)
+    new_link = sdf.attach_style.link
     add_new_link(mech, new_link, parent_link, sdf.pose)
-    sdf.link = new_link
 end
 
 mutable struct BoxSDF{AS} <: AbstractSDF{AS}
     attach_style::AS
-    name::String
-    link::Union{Link, Nothing} # TODO should be member of IsAttached
     pose::Transform
     inv_pose::Transform
     width::SVector3f
@@ -39,8 +39,7 @@ end
 
 function BoxSDF(
         pose::Transform, width::SVector3f; attach_style::AS=IsStandAlone()) where AS<:AttachStyle
-    name = "boxsdf_" * string(UUIDs.uuid1())
-    BoxSDF{AS}(attach_style, name, nothing, pose, inv(pose), width, 0.0, MVector3f(0, 0, 0))
+    BoxSDF{AS}(attach_style, pose, inv(pose), width, 0.0, MVector3f(0, 0, 0))
 end
 
 function BoxSDF(boxmd::BoxMetaData; attach_style::AttachStyle=IsStandAlone())
@@ -67,7 +66,8 @@ function UnionSDF(mech::Mechanism)
     for link in mech.links
         meta = link.geometric_meta_data
         if typeof(meta) == BoxMetaData
-            as = IsAttached()
+            new_link = Link(SdfLink, "boxsdf_" * string(UUIDs.uuid1()))
+            as = IsAttached(new_link, mech)
             sdf = BoxSDF(meta; attach_style=as)
             push!(sdfs, sdf)
             attach_to_link(sdf, mech, link)
