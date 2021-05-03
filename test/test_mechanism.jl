@@ -62,6 +62,7 @@
     @test !is_relevant(mech, shoulder_joint, base_link)
 
     # rptable test fetch with custom link
-    new_link = add_new_link(mech, wrist_link, "mylink", [0, 0, 0])
+    new_link = Link(User, "mylink")
+    add_new_link(mech, new_link, wrist_link, [0, 0, 0])
     @test is_relevant(mech, find_joint(mech, "torso_lift_joint"), new_link)
 end

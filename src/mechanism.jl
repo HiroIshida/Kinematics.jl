@@ -256,7 +256,6 @@ function add_new_link(m::Mechanism, new_link::Link, parent::Link, pose::Transfor
     push!(m.angles, 0.0)
     invalidate_cache!(m)
     # TODO maybe tf_stack and link_id_stack should be updated
-    return new_link
 end
 #
 # forwarding cache methods

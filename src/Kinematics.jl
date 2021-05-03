@@ -45,13 +45,13 @@ export Transform, rotation, translation, rpy
 export CacheVector, invalidate_cache!, set_cache!, iscached, get_cache, extend!
 export PseudoStack
 export parse_urdf
-export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle, set_joint_angles, is_relevant, get_joint_angles!, get_joint_angles, add_new_link
+export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle, set_joint_angles, is_relevant, get_joint_angles!, get_joint_angles, add_new_link, User, Link
 
 # from algorithm.jl
 export get_transform, get_jacobian, get_jacobian!, inverse_kinematics!
 
 #from sdf.jl
-export BoxSDF
+export BoxSDF, UnionSDF
 
 #from collision.jl
 export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add_coll_links, add_sscc, compute_coll_dists, compute_coll_dists!, compute_coll_dists_and_grads!, compute_coll_dists_and_grads
