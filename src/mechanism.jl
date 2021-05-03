@@ -1,7 +1,7 @@
 abstract type GeometricMetaData end
 
 struct BoxMetaData <: GeometricMetaData
-    extents::SVector{3, Float64}
+    extents::SVector3f
     origin::Transform
 end
 
@@ -20,7 +20,10 @@ mutable struct Link_
     geometric_meta_data::Union{GeometricMetaData, Nothing}
 end
 
-struct Link
+abstract type LinkType end
+struct URDF<:LinkType end
+
+mutable struct Link{LT<:LinkType}
     name::String
     id::Int
     pjoint_id::Int
@@ -30,7 +33,7 @@ struct Link
     geometric_meta_data::Union{GeometricMetaData, Nothing}
     data::Dict
 end
-Link(l::Link_) = Link(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
+Link(l::Link_) = Link{URDF}(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
@@ -98,7 +101,7 @@ function Base.zero(::Type{FloatingAxis})
     FloatingAxis([0, 0, 0], [1, 0, 0])
 end
 
-function create_rptable(links::Vector{Link}, joints::Vector{<:Joint})
+function create_rptable(links::Vector{<:Link}, joints::Vector{<:Joint})
     n_link = length(links)
     n_joint = length(joints)
 
@@ -214,7 +217,12 @@ function set_joint_angles(m::Mechanism, joints::Vector{<:Joint}, angles)
     invalidate_cache!(m)
 end
 
-function add_new_link(m::Mechanism, parent::Link, name, position)
+function add_new_link(m::Mechanism, parent::Link, name::String, position::AbstractVector)
+    pose = Transform(SVector3f(position))
+    add_new_link(m, parent, name, pose)
+end
+
+function add_new_link(m::Mechanism, parent::Link, name::String, pose::Transform)
     hlink_id = length(m.links) + 1
     push!(parent.clink_ids, hlink_id)
 
@@ -222,10 +230,9 @@ function add_new_link(m::Mechanism, parent::Link, name, position)
     joint_id = length(m.joints) + 1
     plink_id = parent.id
     clink_id = hlink_id
-    pose = Transform(SVector3f(position))
 
     new_fixed_joint = Joint(joint_name, joint_id, plink_id, clink_id, pose, Fixed())
-    new_link = Link(name, hlink_id, joint_id, [], parent.id, [], nothing, Dict())
+    new_link = Link{URDF}(name, hlink_id, joint_id, [], parent.id, [], nothing, Dict())
 
     push!(m.links, new_link)
     push!(m.joints, new_fixed_joint)
