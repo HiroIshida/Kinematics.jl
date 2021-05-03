@@ -1,5 +1,3 @@
-mutable struct SdfLink <: LinkType end # TODO ?? 
-
 abstract type AttachStyle end
 struct IsStandAlone <: AttachStyle end
 struct IsAttached <: AttachStyle
@@ -9,9 +7,28 @@ end
 
 abstract type AbstractSDF{AS<:AttachStyle} end
 
-function inv_pose(sdf::AbstractSDF{IsAttached})
+mutable struct SdfLinkType <: LinkType
+    sdf::Union{AbstractSDF{IsAttached}, Nothing}
 end
 
+function get_transform(m::Mechanism, link::Link{SdfLinkType})
+    iscached(m, link) && (return get_cache(m, link))
+    pose = _get_transform(m, link)
+    link.sdf.inv_pose = inv(poes) # cache
+    return _get_transform(m, link)
+end
+
+inv_pose(sdf::AbstractSDF) = sdf.inv_pose
+
+function inv_pose(sdf::AbstractSDF{IsAttached})
+    mech, link = sdf.attach_style.mech, sdf.attach_style.link
+    # see get_transform(m::Mechanism, link::Link{SdfLinkType})
+    inv_pose_cached = iscached(mech, link) # because inv_pose is cached simul. in get_transform 
+    if ~inv_pose_cached
+        get_transform(mech, link)
+    end
+    return sdf.inv_pose
+end
 
 function gradient!(sdf::AbstractSDF, p::StaticVector{3, <:AbstractFloat}, out_grad::AbstractVector)
     eps = 1e-7
@@ -48,7 +65,7 @@ end
 
 function (sdf::BoxSDF)(p::StaticVector{3, <:AbstractFloat}; do_cache=true)
     half_extent = 0.5 * sdf.width
-    p_sdfframe = sdf.inv_pose * p
+    p_sdfframe = inv_pose(sdf) * p
     q = abs.(p_sdfframe) - half_extent
     dist = norm(max.(q, 0.0)) + min(maximum(q), 0.0)
     do_cache && (sdf.val_cache = dist)
@@ -66,9 +83,9 @@ function UnionSDF(mech::Mechanism)
     for link in mech.links
         meta = link.geometric_meta_data
         if typeof(meta) == BoxMetaData
-            new_link = Link(SdfLink, "boxsdf_" * string(UUIDs.uuid1()))
-            as = IsAttached(new_link, mech)
-            sdf = BoxSDF(meta; attach_style=as)
+            new_link = Link(SdfLinkType(nothing), "boxsdf_" * string(UUIDs.uuid1()))
+            sdf = BoxSDF(meta; attach_style=IsAttached(new_link, mech))
+            new_link.link_type.sdf = sdf
             push!(sdfs, sdf)
             attach_to_link(sdf, mech, link)
         else

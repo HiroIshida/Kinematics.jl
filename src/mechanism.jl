@@ -25,6 +25,7 @@ struct URDF<:LinkType end
 struct User<:LinkType end
 
 mutable struct Link{LT<:LinkType}
+    link_type::LT
     name::String
     id::Int
     pjoint_id::Int
@@ -34,10 +35,10 @@ mutable struct Link{LT<:LinkType}
     geometric_meta_data::Union{GeometricMetaData, Nothing}
     data::Dict
 end
-Link(l::Link_) = Link{URDF}(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
-function Link(::Type{T}, name) where T<:LinkType 
-    Link{T}(name, -1, -1, [], -1, [], nothing, Dict())
-end
+Link(l::Link_) = Link{URDF}(URDF(), l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
+
+Link(::Type{LT}, name) where LT<:LinkType = Link(LT(), name)
+Link(link_type::LT, name) where LT<:LinkType = Link{LT}(link_type, name, -1, -1, [], -1, [], nothing, Dict())
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
