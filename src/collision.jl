@@ -1,5 +1,7 @@
 using UUIDs
 
+struct CollSphere<:LinkType end
+
 function collision_trimesh(l::Link)
     if !haskey(l.data, "trimesh")
         if typeof(l.geometric_meta_data) == MeshMetaData
@@ -39,7 +41,8 @@ function add_coll_links(sscc::SweptSphereCollisionChecker, coll_link::Link)
     center_list, radius_list = compute_swept_sphere(coll_link)
     for (c, r) in zip(center_list, radius_list)
         link_name = "sphere_" * string(UUIDs.uuid1())
-        add_new_link(sscc.mech, coll_link, link_name, c)
+        new_link = Link(CollSphere, link_name)
+        add_new_link(sscc.mech, new_link, coll_link, c)
         push!(sscc.sphere_links, find_link(sscc.mech, link_name))
         push!(sscc.sphere_radii, r)
     end

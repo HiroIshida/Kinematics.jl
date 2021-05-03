@@ -22,6 +22,7 @@ end
 
 abstract type LinkType end
 struct URDF<:LinkType end
+struct User<:LinkType end
 
 mutable struct Link{LT<:LinkType}
     name::String
@@ -34,6 +35,9 @@ mutable struct Link{LT<:LinkType}
     data::Dict
 end
 Link(l::Link_) = Link{URDF}(l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
+function Link(::Type{T}, name) where T<:LinkType 
+    Link{T}(name, -1, -1, [], -1, [], nothing, Dict())
+end
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
@@ -217,22 +221,29 @@ function set_joint_angles(m::Mechanism, joints::Vector{<:Joint}, angles)
     invalidate_cache!(m)
 end
 
-function add_new_link(m::Mechanism, parent::Link, name::String, position::AbstractVector)
+function add_new_link(m::Mechanism, new_link::Link, parent::Link, position::AbstractVector)
     pose = Transform(SVector3f(position))
-    add_new_link(m, parent, name, pose)
+    add_new_link(m, new_link, parent, pose)
 end
 
-function add_new_link(m::Mechanism, parent::Link, name::String, pose::Transform)
+function add_new_link(m::Mechanism, new_link::Link, parent::Link, pose::Transform)
     hlink_id = length(m.links) + 1
     push!(parent.clink_ids, hlink_id)
 
-    joint_name = name * "_joint"
+    joint_name = new_link.name * "_joint"
     joint_id = length(m.joints) + 1
     plink_id = parent.id
     clink_id = hlink_id
 
     new_fixed_joint = Joint(joint_name, joint_id, plink_id, clink_id, pose, Fixed())
-    new_link = Link{URDF}(name, hlink_id, joint_id, [], parent.id, [], nothing, Dict())
+
+    new_link.id = hlink_id
+    new_link.pjoint_id = joint_id
+    new_link.cjoint_ids = []
+    new_link.plink_id = parent.id
+    new_link.clink_ids = []
+    new_link.geometric_meta_data = nothing
+    new_link.data = Dict()
 
     push!(m.links, new_link)
     push!(m.joints, new_fixed_joint)
