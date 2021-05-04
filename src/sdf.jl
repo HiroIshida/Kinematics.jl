@@ -14,7 +14,8 @@ end
 function get_transform(m::Mechanism, link::Link{SdfLinkType})
     iscached(m, link) && (return get_cache(m, link))
     pose = _get_transform(m, link)
-    link.sdf.inv_pose = inv(poes) # cache
+    link.link_type.sdf.inv_pose = inv(pose) # cache only once
+    link.link_type.sdf.pose = pose
     return _get_transform(m, link)
 end
 
@@ -72,7 +73,7 @@ function (sdf::BoxSDF)(p::StaticVector{3, <:AbstractFloat}; do_cache=true)
     return dist
 end
 
-struct UnionSDF
+mutable struct UnionSDF
     sdfs::Vector{AbstractSDF}
     vals_cache::Vector{Float64} # maybe used in the grad computation
     min_idx_cache::Int
@@ -109,7 +110,7 @@ function (this::UnionSDF)(p::StaticVector{3, <:AbstractFloat})
         this.vals_cache[i] = this.sdfs[i](p; do_cache=true)
     end
     this.min_idx_cache = argmin(this.vals_cache)
-    return this.val_cache[this.min_idx_cache]
+    return this.vals_cache[this.min_idx_cache]
 end
 
 function gradient!(this::UnionSDF, p::StaticVector{3, <:AbstractFloat}, out_grad::AbstractVector)
