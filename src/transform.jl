@@ -37,7 +37,7 @@ end
 end
 
 @inline function Base.:*(tf::Transform, point::StaticVector{3, T}) where T<:AbstractFloat
-    return translation(tf) + point
+    return translation(tf) + rotation(tf) * point
 end
 @inline rotation(t::Transform) = @inbounds return RotMatrix(t.mat[1], t.mat[2], t.mat[3], t.mat[5], t.mat[6], t.mat[7], t.mat[9], t.mat[10], t.mat[11])
 @inline translation(t::Transform) = @inbounds return SVector(t.mat[13], t.mat[14], t.mat[15])
