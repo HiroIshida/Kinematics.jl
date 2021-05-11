@@ -49,7 +49,7 @@ export parse_urdf
 export Mechanism, Transform, parent_link, child_link, child_links, parent_joint, child_joints, find_link, find_joint, isroot, isleaf, joint_angle, set_joint_angle, set_joint_angles, is_relevant, get_joint_angles!, get_joint_angles, add_new_link, User, Link
 
 # from algorithm.jl
-export get_transform, get_jacobian, get_jacobian!, inverse_kinematics!
+export get_transform, get_jacobian, get_jacobian!
 
 #from sdf.jl
 export BoxSDF, UnionSDF
@@ -62,6 +62,9 @@ export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_s
 
 # from planning.jl
 export create_straight_trajectory, plan_trajectory, PoseConstraint, ConfigurationConstraint
+
+# inverse kinematics
+export inverse_kinematics!
 
 # from models.jl
 export load_pr2, rarm_joints, larm_joints, rarm_collision_links, larm_collision_links, reset_manip_pose

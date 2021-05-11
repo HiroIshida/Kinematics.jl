@@ -29,7 +29,8 @@
 
         link = find_link(mech, "gripper_link")
         target_pose = Transform(Kinematics.SVector3f(0.3, -0.4, 1.2))
-        q_goal = inverse_kinematics!(mech, link, joints, target_pose; with_rot=false)
+        q_goal, status = inverse_kinematics!(mech, link, joints, target_pose; with_rot=false)
+        @test status == :FTOL_REACHED
         set_joint_angles(mech, joints, q_goal)
 
         xi_init = Kinematics.create_straight_trajectory(q_start, q_goal, n_wp)

@@ -93,7 +93,8 @@
 
             link = find_link(mech, "gripper_link")
             target_pose = Transform(Kinematics.SVector3f(0.3, -0.4, 1.2))
-            q_goal = inverse_kinematics!(mech, link, joints, target_pose; with_rot=true)
+            q_goal, status = inverse_kinematics!(mech, link, joints, target_pose; with_rot=true)
+            @test status == :FTOL_REACHED
             set_joint_angles(mech, joints, q_goal)
             pose_now = get_transform(mech, link)
             @test isapprox(rpy(pose_now), rpy(target_pose), atol=1e-3)
