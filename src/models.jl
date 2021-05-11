@@ -63,7 +63,6 @@ function reset_manip_pose(mech::Mechanism{PR2})
 
     joints = vcat(rarm_joints(mech), larm_joints(mech), torso_joint(mech))
     av = vcat(rarm_angles, larm_angles, torso_angle)
-    println(av)
     if mech.with_base
         append!(av, zeros(3))
     end
