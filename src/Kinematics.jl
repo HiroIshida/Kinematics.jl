@@ -39,6 +39,7 @@ include("sdf.jl")
 include("visual.jl")
 include("collision.jl")
 include("planning.jl")
+include("inverse_kinematics.jl")
 include("models.jl")
 
 export Transform, rotation, translation, rpy
