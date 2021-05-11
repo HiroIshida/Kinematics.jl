@@ -73,7 +73,7 @@ function (sdf::BoxSDF)(p::StaticVector{3, <:AbstractFloat}; do_cache=true)
     return dist
 end
 
-mutable struct UnionSDF
+mutable struct UnionSDF <: AbstractSDF{IsStandAlone}
     sdfs::Vector{AbstractSDF}
     vals_cache::Vector{Float64} # maybe used in the grad computation
     min_idx_cache::Int
