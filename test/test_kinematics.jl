@@ -76,29 +76,4 @@
         kinematics_test(true)
     end
 
-    @testset "invese kinematics" begin
-        urdf_path = Kinematics.__skrobot__.data.fetch_urdfpath()
-        for with_base in [false, true]
-            mech = parse_urdf(urdf_path, with_base=with_base)
-            joint_names = [
-                    "torso_lift_joint",
-                    "shoulder_pan_joint",
-                    "shoulder_lift_joint",
-                    "upperarm_roll_joint",
-                    "elbow_flex_joint",
-                    "forearm_roll_joint",
-                    "wrist_flex_joint",
-                    "wrist_roll_joint"];
-            joints = [find_joint(mech, name) for name in joint_names]
-
-            link = find_link(mech, "gripper_link")
-            target_pose = Transform(Kinematics.SVector3f(0.3, -0.4, 1.2))
-            q_goal, status = inverse_kinematics!(mech, link, joints, target_pose; with_rot=true)
-            @test status == :FTOL_REACHED
-            set_joint_angles(mech, joints, q_goal)
-            pose_now = get_transform(mech, link)
-            @test isapprox(rpy(pose_now), rpy(target_pose), atol=1e-3)
-            @test isapprox(translation(pose_now), translation(target_pose), atol=1e-3)
-        end
-    end
 end
