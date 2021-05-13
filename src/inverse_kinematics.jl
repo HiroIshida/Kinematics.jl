@@ -1,7 +1,17 @@
 function inverse_kinematics!(m::Mechanism, link::Link, joints::Vector{<:Joint}, target_pose::Transform, 
         sscc::SweptSphereCollisionChecker, sdf::AbstractSDF;
+        use_bistage=true,
         ftol=1e-5, 
-        with_rot=true)
+        with_rot=true,
+    )
+
+    if use_bistage
+        # solve collsion-free problem first, and then use the obtained configuration as the seed
+        opt = inverse_kinematics_problem(m, link, joints, target_pose; ftol=ftol, with_rot=with_rot)
+        angles_current = get_joint_angles(m, joints)
+        minf, minx, ret = NLopt.optimize(opt, angles_current)
+    end
+
     opt = inverse_kinematics_problem(m, link, joints, target_pose; ftol=ftol, with_rot=with_rot)
     G = IneqConst(sscc, joints, sdf, 1, 0.02)
     inequality_constraint!(opt, nloptize(G), [1e-8 for _ in 1:G.n_cons])

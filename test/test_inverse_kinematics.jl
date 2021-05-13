@@ -25,9 +25,6 @@
 end
 
 @testset "inverse kinematics_pr2" begin
-    urdf_path = "../data/fridge.urdf"
-    fridge = parse_urdf(urdf_path, with_base=true)
-    sdf = UnionSDF(fridge)
 
     @testset "no collision" begin
         for with_base in [false, true]
@@ -51,4 +48,42 @@ end
             end
         end
     end
+
+    @testset "with collision" begin
+        urdf_path = "../data/fridge.urdf"
+        fridge = parse_urdf(urdf_path, with_base=true)
+        sdf = UnionSDF(fridge)
+
+        robot = load_pr2(with_base=true)
+        joints = vcat(rarm_joints(robot), larm_joints(robot))
+        reset_manip_pose(robot)
+
+        collision_links = vcat(larm_collision_links(robot), rarm_collision_links(robot))
+        sscc = SweptSphereCollisionChecker(robot)
+        (add_coll_links(sscc, link) for link in collision_links)
+
+        joint = find_joint(fridge, "door_joint")
+        reset_manip_pose(robot)
+        set_joint_angles(fridge, [joint], [2.0, 1.2, 0.0, 0.0])
+
+        pose_fridge = get_transform(fridge, find_link(fridge, "base_link"))
+        pose_target = Transform(SVector3f([0.0, 0.0, 1.2])) * pose_fridge
+
+        link = find_link(robot, "l_gripper_tool_frame")
+        q_goal, status = inverse_kinematics!(robot, link, joints, pose_target, sscc, sdf;
+                                             with_rot=true, use_bistage=true)
+
+        @test status == :FTOL_REACHED
+        pose_actual = get_transform(robot, link)
+        pos_diff = translation(pose_target) - translation(pose_actual)
+        @test norm(pos_diff) < 1e-3
+
+        pose2angles(pose) = (tmp = RotZYX(rotation(pose)); [tmp.theta1, tmp.theta2, tmp.theta3])
+        rot_diff = pose2angles(pose_target) - pose2angles(pose_actual)
+        @test norm(rot_diff) < 1e-3
+
+        vals = compute_coll_dists(sscc, joints, sdf)
+        @test all(vals .> -1e-5)
+    end
 end
+

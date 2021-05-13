@@ -1,4 +1,3 @@
-using UUIDs
 
 struct CollSphere<:LinkType end
 
