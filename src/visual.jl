@@ -8,12 +8,11 @@ to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 create_vis_object(md::SphereMetaData) = (HyperSphere(Point(0., 0, 0), md.radius))
 create_vis_object(md::BoxMetaData) = (Rect(Vec((-0.5*md.extents)...), Vec(1.0*md.extents...)))
 create_vis_object(md::MeshMetaData) = (MeshFileGeometry(md.file_path))
-
 create_vis_sphere(radius) = (HyperSphere(Point(0, 0, 0.), radius))
 
 function update(vis::AbstractVisualizer, mech::Mechanism)
     for link in mech.links
-        update(vis[name(mech)], mech, link)
+        update(vis, mech, link)
     end
     nothing
 end
@@ -25,7 +24,7 @@ function update_common(vis::AbstractVisualizer, mech::Mechanism, link::Link)
     tf_world_to_link = get_transform(mech, link)
     tf_link_to_geom = link.geometric_meta_data.origin
     tf_world_to_geom = tf_world_to_link * tf_link_to_geom
-    settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
+    settransform!(vis[name(mech)][link.name], to_affine_map(tf_world_to_geom))
 end
 
 function add_sdf(vis::AbstractVisualizer, boxsdf::BoxSDF)
