@@ -1,5 +1,5 @@
 
-struct CollSphere<:LinkType end
+struct CollSphere<:VirtualLink end
 
 function collision_trimesh(l::Link)
     if !haskey(l.data, "trimesh")

@@ -45,6 +45,8 @@ function add_link(vis::AbstractVisualizer, link::Link)
     vis_obj = create_vis_object(link.geometric_meta_data)
     MeshCat.setobject!(vis[link.name], vis_obj)
 end
+# virtual link attached to the mech 
+add_link(vise::AbstractVisualizer, link::Link{LT}) where LT<:VirtualLink = nothing
 
 
 function rgb_material(rgb::AbstractArray)

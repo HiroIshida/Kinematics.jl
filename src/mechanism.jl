@@ -25,9 +25,12 @@ mutable struct Link_
     geometric_meta_data::Union{GeometricMetaData, Nothing}
 end
 
+# The difference between Realink and VirtualLink is important in visualization
 abstract type LinkType end
-struct URDF<:LinkType end
-struct User<:LinkType end
+abstract type RealLink <: LinkType end 
+abstract type VirtualLink <: LinkType end
+struct URDF<:RealLink end
+struct User<:RealLink end
 
 mutable struct Link{LT<:LinkType}
     link_type::LT
