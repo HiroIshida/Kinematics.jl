@@ -95,3 +95,11 @@ function update(mvis::MechanismVisualizer)
         update(mvis, mech)
     end
 end
+
+function add_sscc(vis::MechanismVisualizer, sscc::SweptSphereCollisionChecker)
+    for (sphere, radius) in zip(sscc.sphere_links, sscc.sphere_radii)
+        vis_sphere = create_vis_sphere(radius)
+        mech_name = name(sscc.mech)
+        MeshCat.setobject!(vis[mech_name][sphere.name], vis_sphere, yellow_material())
+    end
+end

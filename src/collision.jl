@@ -48,14 +48,6 @@ function add_coll_links(sscc::SweptSphereCollisionChecker, coll_link::Link)
     end
 end
 
-function add_sscc(vis::AbstractVisualizer, sscc::SweptSphereCollisionChecker)
-    for (sphere, radius) in zip(sscc.sphere_links, sscc.sphere_radii)
-        vis_sphere = create_vis_sphere(radius)
-        mech_name = name(sscc.mech)
-        MeshCat.setobject!(vis[mech_name][sphere.name], vis_sphere, yellow_material())
-    end
-end
-
 function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::AbstractSDF, 
         out_vals::AbstractArray{Float64, 1})
     for i in 1:length(sscc.sphere_links)
