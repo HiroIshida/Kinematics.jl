@@ -18,7 +18,7 @@ for link in collision_links
     add_coll_links(sscc, link)
 end
 
-vis = Visualizer()
+vis = MechanismVisualizer()
 add_mechanism(vis, fridge)
 add_mechanism(vis, robot)
 
@@ -40,11 +40,10 @@ margin = 0.03
 @time q_seq, status = plan_trajectory(sscc, joints, sdf, q_start, q_goal, n_wp, ftol_abs=1.0e-4, solver=:NLOPT, partial_consts=[], margin=margin)
 
 open(vis)
-update(vis, robot)
-update(vis, fridge)
+update(vis)
 
 for i in 1:n_wp
     sleep(1.0)
     set_joint_angles(robot, joints, q_seq[:, i])
-    update(vis, robot)
+    update(vis)
 end
