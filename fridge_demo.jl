@@ -21,6 +21,7 @@ end
 vis = MechanismVisualizer()
 add_mechanism(vis, fridge)
 add_mechanism(vis, robot)
+add_sscc(vis, sscc)
 
 joint = find_joint(fridge, "door_joint")
 reset_manip_pose(robot)

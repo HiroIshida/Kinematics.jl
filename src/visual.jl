@@ -17,9 +17,12 @@ end
 
 function update(vis::AbstractVisualizer, mech::Mechanism, link::Link)
     isnothing(link.geometric_meta_data) && return 
+    update_common(vis, mech, link, link.geometric_meta_data.origin)
+end
 
+function update_common(vis::AbstractVisualizer, mech::Mechanism, link::Link, origin::Transform)
     tf_world_to_link = get_transform(mech, link)
-    tf_link_to_geom = link.geometric_meta_data.origin
+    tf_link_to_geom = origin
     tf_world_to_geom = tf_world_to_link * tf_link_to_geom
     settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
 end

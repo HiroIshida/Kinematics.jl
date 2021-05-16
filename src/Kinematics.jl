@@ -58,7 +58,7 @@ export BoxSDF, UnionSDF
 export SweptSphereCollisionChecker, collision_trimesh, compute_swept_sphere, add_coll_links, add_sscc, compute_coll_dists, compute_coll_dists!, compute_coll_dists_and_grads!, compute_coll_dists_and_grads
 
 # from visual.jl
-export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_sdf
+export add_mechanism, update, add_frame, to_affine_map, create_vis_sphere, add_sdf, MechanismVisualizer
 
 # from planning.jl
 export create_straight_trajectory, plan_trajectory, PoseConstraint, ConfigurationConstraint
