@@ -333,7 +333,9 @@ function plan_trajectory(
         sscc::SweptSphereCollisionChecker,
         joints::Vector{<:Joint},
         sdf::AbstractSDF,
-        q_start, q_goal, n_wp
+        q_start::AbstractVector, 
+        q_goal::AbstractVector, 
+        n_wp
         ;
         margin=2e-2,
         partial_consts=Vector{PartialConstraint}(),

@@ -6,7 +6,7 @@ using Kinematics
 
 const SVector3f = SVector{3, Float64}
 
-urdf_path = "./data/complecated_fridge.urdf"
+urdf_path = "./data/fridge.urdf"
 fridge = parse_urdf(urdf_path, with_base=true)
 sdf = UnionSDF(fridge)
 
@@ -33,7 +33,7 @@ add_frame(vis[:finger], tf_target)
 q_start = get_joint_angles(robot, joints)
 link = find_link(robot, "l_gripper_tool_frame")
 inverse_kinematics!(robot, link, joints, tf_target; with_rot=true) # pre solving
-q_goal = inverse_kinematics!(robot, link, joints, tf_target; with_rot=true, sscc=sscc, sdf=sdf)
+q_goal, _ = inverse_kinematics!(robot, link, joints, tf_target, sscc, sdf; with_rot=true)
 
 n_wp = 10
 margin = 0.03
