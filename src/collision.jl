@@ -40,7 +40,8 @@ function add_coll_links(sscc::SweptSphereCollisionChecker, coll_link::Link)
     center_list, radius_list = compute_swept_sphere(coll_link)
     for (c, r) in zip(center_list, radius_list)
         link_name = "sphere_" * string(UUIDs.uuid1())
-        new_link = Link(CollSphere, link_name)
+        meta_data = SphereMetaData(r, zero(Transform))
+        new_link = Link(CollSphere, link_name, meta_data)
         add_new_link(sscc.mech, new_link, coll_link, c)
         push!(sscc.sphere_links, find_link(sscc.mech, link_name))
         push!(sscc.sphere_radii, r)
@@ -54,12 +55,6 @@ function add_sscc(vis::AbstractVisualizer, sscc::SweptSphereCollisionChecker)
         MeshCat.setobject!(vis[mech_name][sphere.name], vis_sphere, yellow_material())
     end
 end
-
-function update(vis::AbstractVisualizer, mech::Mechanism, link::Link{CollSphere})
-    origin = zero(Transform)
-    update_common(vis, mech, link, origin)
-end
-
 
 function compute_coll_dists!(sscc::SweptSphereCollisionChecker, joints::Vector{<:Joint}, sdf::AbstractSDF, 
         out_vals::AbstractArray{Float64, 1})

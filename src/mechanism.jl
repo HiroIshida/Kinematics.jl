@@ -5,6 +5,11 @@ struct BoxMetaData <: GeometricMetaData
     origin::Transform
 end
 
+struct SphereMetaData <: GeometricMetaData
+    radius::Float64
+    origin::Transform
+end
+
 struct MeshMetaData <: GeometricMetaData
     file_path::String
     origin::Transform
@@ -37,8 +42,8 @@ mutable struct Link{LT<:LinkType}
 end
 Link(l::Link_) = Link{URDF}(URDF(), l.name, l.id, l.pjoint_id, l.cjoint_ids, l.plink_id, l.clink_ids, l.geometric_meta_data, Dict())
 
-Link(::Type{LT}, name) where LT<:LinkType = Link(LT(), name)
-Link(link_type::LT, name) where LT<:LinkType = Link{LT}(link_type, name, -1, -1, [], -1, [], nothing, Dict())
+Link(::Type{LT}, name, meta_data=nothing) where LT<:LinkType = Link(LT(), name, meta_data)
+Link(link_type::LT, name, meta_data=nothing) where LT<:LinkType = Link{LT}(link_type, name, -1, -1, [], -1, [], meta_data, Dict())
 
 abstract type JointType end
 for MovableJointType in (:Revolute, :Prismatic)
@@ -243,7 +248,6 @@ function add_new_link(m::Mechanism, new_link::Link, parent::Link, pose::Transfor
     new_link.cjoint_ids = []
     new_link.plink_id = parent.id
     new_link.clink_ids = []
-    new_link.geometric_meta_data = nothing
     new_link.data = Dict()
 
     push!(m.links, new_link)

@@ -3,6 +3,9 @@ import Lazy
 
 to_affine_map(tform::Transform) = AffineMap(rotation(tform), translation(tform))
 
+# in creating vis object we don't use origin information. Rather, 
+# the origin information will be used in settransform!
+create_vis_object(md::SphereMetaData) = (HyperSphere(Point(0., 0, 0), md.radius))
 create_vis_object(md::BoxMetaData) = (Rect(Vec((-0.5*md.extents)...), Vec(1.0*md.extents...)))
 create_vis_object(md::MeshMetaData) = (MeshFileGeometry(md.file_path))
 
@@ -15,14 +18,12 @@ function update(vis::AbstractVisualizer, mech::Mechanism)
     nothing
 end
 
-function update(vis::AbstractVisualizer, mech::Mechanism, link::Link)
-    isnothing(link.geometric_meta_data) && return 
-    update_common(vis, mech, link, link.geometric_meta_data.origin)
-end
+update(vis::AbstractVisualizer, mech::Mechanism, link::Link) = update_common(vis, mech, link)
 
-function update_common(vis::AbstractVisualizer, mech::Mechanism, link::Link, origin::Transform)
+function update_common(vis::AbstractVisualizer, mech::Mechanism, link::Link)
+    isnothing(link.geometric_meta_data) && return 
     tf_world_to_link = get_transform(mech, link)
-    tf_link_to_geom = origin
+    tf_link_to_geom = link.geometric_meta_data.origin
     tf_world_to_geom = tf_world_to_link * tf_link_to_geom
     settransform!(vis[link.name], to_affine_map(tf_world_to_geom))
 end
